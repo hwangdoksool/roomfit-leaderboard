@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SPOEX 2026 Leaderboard</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #5252FA;
+    --accent: #BAFC27;
+    --bg: #0A0A0F;
+    --bg-card: #12121A;
+    --bg-row: #1A1A25;
+    --bg-row-alt: #15151F;
+    --text: #EEEEF2;
+    --text-dim: #8888A0;
+    --gold: #FFD700;
+    --silver: #C0C0C0;
+    --bronze: #CD7F32;
+  }
+
+  html, body {
+    width: 1920px; height: 1080px;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    width: 1920px; height: 1080px;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    height: 100px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: linear-gradient(180deg, #111118 0%, var(--bg) 100%);
+    border-bottom: 1px solid #222233;
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex; align-items: center; gap: 20px;
+  }
+
+  .logo {
+    height: 36px;
+    filter: brightness(0) invert(1);
+  }
+
+  .event-badge {
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    display: flex; align-items: center; gap: 28px;
+  }
+
+  .live-dot {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 600; color: var(--accent);
+  }
+
+  .live-dot::before {
+    content: '';
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(186,252,39,.6); }
+    50% { opacity: .7; box-shadow: 0 0 0 8px rgba(186,252,39,0); }
+  }
+
+  .clock {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .btn-fs {
+    background: transparent;
+    border: 1px solid #444;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+  }
+  .btn-fs:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px 48px 0;
+    min-height: 0;
+  }
+
+  .panel {
+    flex: 1;
+    display: flex; flex-direction: column;
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid #222233;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 20px 28px 16px;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .panel-icon {
+    font-size: 32px;
+    line-height: 1;
+  }
+
+  .panel-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .panel-title span {
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 16px;
+    margin-left: 8px;
+  }
+
+  .panel.mjolnir .panel-header { border-bottom: 3px solid var(--primary); }
+  .panel.power .panel-header { border-bottom: 3px solid var(--accent); }
+
+  /* ── TABLE ── */
+  .board {
+    flex: 1;
+    display: flex; flex-direction: column;
+    padding: 0 16px 12px;
+    min-height: 0;
+  }
+
+  .row-header, .row {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .row-header {
+    height: 36px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .row {
+    height: 62px;
+    margin-bottom: 4px;
+    transition: background .4s, transform .3s;
+  }
+
+  .row:nth-child(odd) { background: var(--bg-row); }
+  .row:nth-child(even) { background: var(--bg-row-alt); }
+
+  .row.top1 { background: linear-gradient(90deg, rgba(255,215,0,.12) 0%, transparent 60%); border-left: 3px solid var(--gold); }
+  .row.top2 { background: linear-gradient(90deg, rgba(192,192,192,.08) 0%, transparent 60%); border-left: 3px solid var(--silver); }
+  .row.top3 { background: linear-gradient(90deg, rgba(205,127,50,.08) 0%, transparent 60%); border-left: 3px solid var(--bronze); }
+
+  .row.highlight {
+    animation: highlight-pulse 2.5s ease-out;
+  }
+
+  @keyframes highlight-pulse {
+    0% { background: rgba(186,252,39,.25); transform: scale(1.01); }
+    100% { background: transparent; transform: scale(1); }
+  }
+
+  .col-rank { width: 60px; text-align: center; font-size: 22px; font-weight: 800; }
+  .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 26px; }
+
+  .col-name { flex: 1; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .col-score {
+    width: 140px;
+    text-align: right;
+    font-size: 28px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .panel.mjolnir .col-score { color: var(--primary); }
+  .panel.power .col-score { color: var(--accent); }
+
+  .col-sub {
+    width: 120px;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-dim);
+    padding-left: 8px;
+  }
+
+  .col-exercise {
+    width: 130px;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .col-grade {
+    width: 50px;
+    text-align: center;
+    font-size: 22px;
+  }
+
+  .row-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--text-dim);
+    font-size: 18px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    height: 72px;
+    display: flex; align-items: center; justify-content: center;
+    gap: 60px;
+    padding: 0 48px;
+    background: linear-gradient(0deg, #111118 0%, var(--bg) 100%);
+    border-top: 1px solid #222233;
+    flex-shrink: 0;
+  }
+
+  .stat {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .stat-label {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.primary { color: var(--primary); }
+
+  .stat-divider {
+    width: 1px; height: 32px;
+    background: #333;
+  }
+
+  .power-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    max-width: 400px;
+  }
+
+  /* ── BG glow effects ── */
+  .glow-left, .glow-right {
+    position: fixed;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    filter: blur(200px);
+    opacity: .08;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .glow-left { top: 200px; left: -100px; background: var(--primary); }
+  .glow-right { top: 200px; right: -100px; background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="glow-left"></div>
+<div class="glow-right"></div>
+
+<div class="container">
+  <header>
+    <div class="header-left">
+      <img class="logo" src="https://wspn-images.wespion.workers.dev/roomfit-logo.png" alt="Roomfit">
+      <div class="event-badge">SPOEX 2026</div>
+    </div>
+    <div class="header-right">
+      <div class="live-dot">LIVE</div>
+      <div class="clock" id="clock">00:00:00</div>
+      <button class="btn-fs" id="btnFs" title="Fullscreen">&#x26F6; Fullscreen</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Mjolnir -->
+    <div class="panel mjolnir">
+      <div class="panel-header">
+        <div class="panel-icon">&#x1F528;</div>
+        <div class="panel-title">묠니르 챌린지 <span>Top 10</span></div>
+      </div>
+      <div class="board" id="boardMjolnir">
+        <div class="row-header">
+          <div class="col-rank">#</div>
+          <div class="col-name">닉네임</div>
+          <div class="col-score">점수</div>
+          <div class="col-sub">최대높이</div>
+        </div>
+        <!-- rows injected -->
+      </div>
+    </div>
+
+    <!-- Power Score -->
+    <div class="panel power">
+      <div class="panel-header">
+        <div class="panel-icon">&#x26A1;</div>
+        <div class="panel-title">Power Score <span>Top 10</span></div>
+      </div>
+      <div class="board" id="boardPower">
+        <div class="row-header">
+          <div class="col-rank">#</div>
+          <div class="col-name">닉네임</div>
+          <div class="col-grade"></div>
+          <div class="col-score">점수</div>
+          <div class="col-exercise">운동</div>
+        </div>
+        <!-- rows injected -->
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="stat">
+      <span class="stat-label">오늘 참가자</span>
+      <span class="stat-value accent" id="statCount">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-label">묠니르 최고</span>
+      <span class="stat-value primary" id="statMjolnirBest">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-label">Power Score 최고</span>
+      <span class="stat-value accent" id="statPowerBest">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="power-desc">Power Score = 속도 기반 근파워 측정 (VBT). 무게 x 속도로 폭발력을 수치화합니다.</div>
+  </footer>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MEDALS = ['', '\u{1F947}', '\u{1F948}', '\u{1F949}'];
+
+function todayStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+function grade(score) {
+  if (score >= 100) return '\u{1F525}';
+  if (score >= 70)  return '\u26A1';
+  if (score >= 40)  return '\u{1F4AA}';
+  return '\u{1F422}';
+}
+
+// ── Previous IDs for highlight ──
+let prevMjolnirIds = new Set();
+let prevPowerIds = new Set();
+
+// ── Render ──
+function renderMjolnir(rows) {
+  const board = document.getElementById('boardMjolnir');
+  const header = board.querySelector('.row-header');
+  board.innerHTML = '';
+  board.appendChild(header);
+
+  if (!rows.length) {
+    board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
+    return;
+  }
+
+  const newIds = new Set(rows.map(r => r.id));
+
+  rows.forEach((r, i) => {
+    const rank = i + 1;
+    const medal = MEDALS[rank] || '';
+    const nickname = r.spoex_registrations?.[0]?.nickname || '???';
+    const heightCm = r.max_height_mm != null ? (r.max_height_mm / 10).toFixed(1) + ' cm' : '-';
+    const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
+    const topClass = rank <= 3 ? ` top${rank}` : '';
+
+    const div = document.createElement('div');
+    div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
+    div.innerHTML = `
+      <div class="col-rank">${medal || rank}</div>
+      <div class="col-name">${esc(nickname)}</div>
+      <div class="col-score">${r.mjolnir_score ?? '-'}</div>
+      <div class="col-sub">${heightCm}</div>
+    `;
+    board.appendChild(div);
+  });
+
+  prevMjolnirIds = newIds;
+}
+
+function renderPower(rows) {
+  const board = document.getElementById('boardPower');
+  const header = board.querySelector('.row-header');
+  board.innerHTML = '';
+  board.appendChild(header);
+
+  if (!rows.length) {
+    board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
+    return;
+  }
+
+  const newIds = new Set(rows.map(r => r.id));
+
+  rows.forEach((r, i) => {
+    const rank = i + 1;
+    const medal = MEDALS[rank] || '';
+    const nickname = r.spoex_registrations?.[0]?.nickname || '???';
+    const isNew = !prevPowerIds.has(r.id) && prevPowerIds.size > 0;
+    const topClass = rank <= 3 ? ` top${rank}` : '';
+    const score = r.score ?? 0;
+
+    const div = document.createElement('div');
+    div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
+    div.innerHTML = `
+      <div class="col-rank">${medal || rank}</div>
+      <div class="col-name">${esc(nickname)}</div>
+      <div class="col-grade">${grade(score)}</div>
+      <div class="col-score">${score}</div>
+      <div class="col-exercise">${esc(r.exercise_name || '')}</div>
+    `;
+    board.appendChild(div);
+  });
+
+  prevPowerIds = newIds;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Fetch ──
+async function fetchAll() {
+  const start = todayStart();
+
+  const [mjolnir, power, countRes] = await Promise.all([
+    sb.from('spoex_results')
+      .select('id, mjolnir_score, max_height_mm, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
+      .eq('mode', 'mjolnir')
+      .gte('created_at', start)
+      .order('mjolnir_score', { ascending: false })
+      .limit(10),
+
+    sb.from('spoex_results')
+      .select('id, score, exercise_name, estimated_1rm, avg_velocity, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
+      .eq('mode', 'vbt')
+      .gte('created_at', start)
+      .order('score', { ascending: false })
+      .limit(10),
+
+    sb.from('spoex_registrations')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', start),
+  ]);
+
+  if (mjolnir.data) renderMjolnir(mjolnir.data);
+  if (power.data) renderPower(power.data);
+
+  // Stats
+  document.getElementById('statCount').textContent = countRes.count ?? 0;
+  document.getElementById('statMjolnirBest').textContent =
+    mjolnir.data?.[0]?.mjolnir_score ?? '-';
+  document.getElementById('statPowerBest').textContent =
+    power.data?.[0]?.score ?? '-';
+}
+
+// ── Clock ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('ko-KR', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Fullscreen ──
+document.getElementById('btnFs').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// ── Realtime ──
+sb.channel('leaderboard')
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'spoex_registrations',
+  }, () => {
+    setTimeout(fetchAll, 500);
+  })
+  .subscribe();
+
+// ── Fallback polling ──
+setInterval(fetchAll, 30000);
+
+// ── Init ──
+fetchAll();
+</script>
+</body>
+</html>

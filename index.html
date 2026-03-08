@@ -516,8 +516,23 @@ async function showQrRegistrationView() {
       if (gErr) throw gErr;
 
       msgEl.style.color = '#BAFC27';
-      msgEl.textContent = '등록 완료! 잠시 후 리더보드로 이동합니다.';
-      setTimeout(() => location.href = '/', 1200);
+      msgEl.innerHTML = '등록 완료! <b>리더보드 보기</b>로 이동합니다.';
+
+      // 등록 직후 결과자가 바로 랭킹을 확인할 수 있도록 즉시 버튼 노출
+      const card = document.querySelector('main > div');
+      if (card && !document.getElementById('goBoardBtn')) {
+        const wrap = document.createElement('div');
+        wrap.style.marginTop = '12px';
+        wrap.innerHTML = `
+          <button id="goBoardBtn" style="width:100%;padding:12px;border:none;border-radius:10px;background:#5252FA;color:#fff;font-weight:800;font-size:15px;">지금 리더보드 보기</button>
+        `;
+        card.appendChild(wrap);
+        document.getElementById('goBoardBtn').addEventListener('click', () => {
+          location.href = '/';
+        });
+      }
+
+      setTimeout(() => location.href = '/', 900);
     } catch (e) {
       msgEl.style.color = '#ff8a8a';
       msgEl.textContent = `등록 실패: ${e?.message || e}`;

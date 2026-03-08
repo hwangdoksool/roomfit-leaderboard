@@ -424,7 +424,9 @@ function renderMjolnir(rows) {
     const rank = i + 1;
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
-    const heightCm = r.max_height_mm != null ? (r.max_height_mm / 10).toFixed(1) + ' cm' : '-';
+    const d = r.set_details || {};
+    const score = d.score ?? '-';
+    const heightCm = d.height_cm != null ? Number(d.height_cm).toFixed(1) + ' cm' : '-';
     const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
 
@@ -433,7 +435,7 @@ function renderMjolnir(rows) {
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
       <div class="col-name">${esc(nickname)}</div>
-      <div class="col-score">${r.mjolnir_score ?? '-'}</div>
+      <div class="col-score">${score}</div>
       <div class="col-sub">${heightCm}</div>
     `;
     board.appendChild(div);
@@ -459,9 +461,10 @@ function renderPower(rows) {
     const rank = i + 1;
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
+    const d = r.set_details || {};
     const isNew = !prevPowerIds.has(r.id) && prevPowerIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
-    const score = r.score ?? 0;
+    const score = Number(d.power_score ?? 0);
 
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
@@ -470,7 +473,7 @@ function renderPower(rows) {
       <div class="col-name">${esc(nickname)}</div>
       <div class="col-grade">${grade(score)}</div>
       <div class="col-score">${score}</div>
-      <div class="col-exercise">${esc(r.exercise_name || '')}</div>
+      <div class="col-exercise">${esc(d.exercise || r.exercise_name || '')}</div>
     `;
     board.appendChild(div);
   });
@@ -488,35 +491,39 @@ function esc(s) {
 async function fetchAll() {
   const start = todayStart();
 
-  const [mjolnir, power, countRes] = await Promise.all([
+  const [resultsRes, countRes] = await Promise.all([
     sb.from('spoex_results')
-      .select('id, mjolnir_score, max_height_mm, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
-      .eq('mode', 'mjolnir')
+      .select('id, mode, exercise_name, set_details, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
       .gte('created_at', start)
-      .order('mjolnir_score', { ascending: false })
-      .limit(10),
-
-    sb.from('spoex_results')
-      .select('id, score, exercise_name, estimated_1rm, avg_velocity, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
-      .eq('mode', 'vbt')
-      .gte('created_at', start)
-      .order('score', { ascending: false })
-      .limit(10),
+      .limit(300),
 
     sb.from('spoex_registrations')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', start),
   ]);
 
-  if (mjolnir.data) renderMjolnir(mjolnir.data);
-  if (power.data) renderPower(power.data);
+  const rows = resultsRes.data || [];
+
+  // mode는 DB 제약상 1rm이라 set_details.source_mode로 분기
+  const mjolnirRows = rows
+    .filter(r => r.set_details?.source_mode === 'mjolnir')
+    .sort((a, b) => Number(b.set_details?.score || 0) - Number(a.set_details?.score || 0))
+    .slice(0, 10);
+
+  const powerRows = rows
+    .filter(r => r.set_details?.source_mode === 'vbt')
+    .sort((a, b) => Number(b.set_details?.power_score || 0) - Number(a.set_details?.power_score || 0))
+    .slice(0, 10);
+
+  renderMjolnir(mjolnirRows);
+  renderPower(powerRows);
 
   // Stats
   document.getElementById('statCount').textContent = countRes.count ?? 0;
   document.getElementById('statMjolnirBest').textContent =
-    mjolnir.data?.[0]?.mjolnir_score ?? '-';
+    mjolnirRows[0]?.set_details?.score ?? '-';
   document.getElementById('statPowerBest').textContent =
-    power.data?.[0]?.score ?? '-';
+    powerRows[0]?.set_details?.power_score ?? '-';
 }
 
 // ── Clock ──

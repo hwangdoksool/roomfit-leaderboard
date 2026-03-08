@@ -6,6 +6,7 @@
 <title>Roomfit — 내 결과</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -238,6 +239,11 @@ if (isMjolnir) {
   grid.innerHTML = statsHtml;
 }
 
+// Supabase
+const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // 닉네임 입력
 const nicknameEl = document.getElementById('nickname');
 const submitBtn = document.getElementById('submitBtn');
@@ -246,26 +252,79 @@ nicknameEl.addEventListener('input', () => {
   submitBtn.disabled = len < 2 || len > 10;
 });
 
+function toNum(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 // 등록
 submitBtn.addEventListener('click', async () => {
   submitBtn.disabled = true;
   submitBtn.textContent = '등록 중...';
-  const nickname = nicknameEl.value.trim();
-  const marketing = document.getElementById('marketingAgree').checked;
 
-  // TODO: Supabase 연동
-  // const { data, error } = await supabase.from('leaderboard').insert({
-  //   mode, nickname, marketing,
-  //   score: isMjolnir ? Number(params.get('score')) : null,
-  //   power_score: !isMjolnir ? Number(params.get('power')) : null,
-  //   ...
-  // });
+  try {
+    const nickname = nicknameEl.value.trim();
+    const marketing = document.getElementById('marketingAgree').checked;
 
-  // 임시: 성공으로 처리
-  await new Promise(r => setTimeout(r, 500));
+    const payload = isMjolnir
+      ? {
+          source_mode: 'mjolnir',
+          score: toNum(params.get('score')),
+          height_cm: toNum(params.get('height')),
+          shoulder_cm: toNum(params.get('shoulder')),
+          ts: params.get('ts') || null,
+        }
+      : {
+          source_mode: 'vbt',
+          exercise: params.get('exercise') || null,
+          weight_kg: toNum(params.get('weight')),
+          sets: toNum(params.get('sets')),
+          reps: toNum(params.get('reps')),
+          e1rm: toNum(params.get('e1rm')),
+          power_score: toNum(params.get('power')),
+          ts: params.get('ts') || null,
+        };
 
-  document.getElementById('formCard').style.display = 'none';
-  document.getElementById('successMsg').classList.add('show');
+    // 1) 결과 저장 (기존 스키마 제약: mode는 '1rm'만 허용)
+    const resultRow = {
+      mode: '1rm',
+      exercise_name: isMjolnir ? 'mjolnir' : (params.get('exercise') || 'vbt'),
+      estimated_1rm: isMjolnir ? null : toNum(params.get('e1rm')),
+      total_sets: toNum(params.get('sets')) || 0,
+      total_reps: toNum(params.get('reps')) || 0,
+      set_details: payload,
+      session_id: `qr_${Date.now()}`,
+      device_id: 'spoex_kiosk',
+    };
+
+    const { data: resultData, error: resultError } = await sb
+      .from('spoex_results')
+      .insert(resultRow)
+      .select('id')
+      .single();
+
+    if (resultError) throw resultError;
+
+    // 2) 닉네임/동의 저장
+    const { error: regError } = await sb
+      .from('spoex_registrations')
+      .insert({
+        nickname,
+        marketing_consent: marketing,
+        result_id: resultData.id,
+      });
+
+    if (regError) throw regError;
+
+    document.getElementById('formCard').style.display = 'none';
+    document.getElementById('successMsg').classList.add('show');
+  } catch (e) {
+    console.error(e);
+    alert('등록 실패: 네트워크/DB 상태를 확인해주세요.\n' + (e?.message || 'unknown error'));
+    submitBtn.disabled = false;
+    submitBtn.textContent = '리더보드 등록';
+  }
 });
 </script>
 </body>

@@ -401,41 +401,99 @@ async function showQrRegistrationView() {
   const app = document.querySelector('.app');
   if (!app) return;
 
+  const resultSummary = mode === 'mjolnir'
+    ? `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">점수</div><div style="font-weight:800;font-size:20px;">${qs.get('score') || '-'}점</div></div>
+        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">최대 높이</div><div style="font-weight:800;font-size:20px;">${qs.get('height') || '-'}cm</div></div>
+      </div>`
+    : `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">Power Score</div><div style="font-weight:800;font-size:20px;">${qs.get('power') || '-'}</div></div>
+        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">운동</div><div style="font-weight:800;font-size:16px;">${qs.get('exercise') || '-'}</div></div>
+      </div>`;
+
   app.innerHTML = `
-    <main style="display:flex;align-items:center;justify-content:center;height:100vh;">
-      <div style="width:min(92vw,520px);background:#12121A;border-radius:20px;padding:28px;">
-        <h2 style="font-size:28px;font-weight:800;margin-bottom:8px;">결과 등록</h2>
-        <div style="color:#9aa;margin-bottom:18px;">${mode === 'mjolnir' ? '🔨 묠니르' : '⚡ AI-VBT'} 결과를 리더보드에 등록합니다</div>
-        <div style="margin-bottom:12px;color:#fff;font-size:20px;font-weight:700;">${mode === 'mjolnir' ? `점수 ${qs.get('score') || '-'}점` : `Power ${qs.get('power') || '-'}점`}</div>
-        <input id="qrNick" placeholder="닉네임 (2~10자)" maxlength="10" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;" />
-        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;color:#9aa;font-size:14px;">
-          <input id="qrAgree" type="checkbox" style="margin-top:2px;" />
-          마케팅 정보 수신 동의 (선택)
+    <main style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+      <div style="width:min(92vw,560px);background:#12121A;border-radius:20px;padding:24px;">
+        <h2 style="font-size:26px;font-weight:800;margin-bottom:6px;">결과 등록</h2>
+        <div style="color:#9aa;margin-bottom:14px;">${mode === 'mjolnir' ? '🔨 묠니르' : '⚡ AI-VBT'} 결과를 확인하고 등록하세요</div>
+        ${resultSummary}
+
+        <input id="qrName" placeholder="이름 (필수)" maxlength="20" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;margin-bottom:8px;" />
+        <input id="qrPhone" placeholder="연락처 (필수, 숫자만)" inputmode="numeric" maxlength="13" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;margin-bottom:8px;" />
+        <input id="qrNick" placeholder="리더보드 닉네임 (선택, 미입력시 이름 사용)" maxlength="10" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;" />
+
+        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;color:#ddd;font-size:13px;line-height:1.4;">
+          <input id="qrPrivacy" type="checkbox" style="margin-top:2px;" />
+          개인정보 수집/이용에 동의합니다 (필수)
         </label>
-        <button id="qrSubmit" style="margin-top:16px;width:100%;padding:14px;border:none;border-radius:10px;background:#BAFC27;color:#111;font-weight:800;font-size:16px;">리더보드 등록</button>
+        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:#ddd;font-size:13px;line-height:1.4;">
+          <input id="qrAgree" type="checkbox" style="margin-top:2px;" />
+          마케팅 정보 수신에 동의합니다 (필수)
+        </label>
+
+        <button id="qrSubmit" style="margin-top:16px;width:100%;padding:14px;border:none;border-radius:10px;background:#BAFC27;color:#111;font-weight:800;font-size:16px;">결과 등록하기</button>
         <div id="qrMsg" style="margin-top:10px;color:#9aa;font-size:13px;"></div>
       </div>
     </main>
   `;
 
   const btn = document.getElementById('qrSubmit');
+  const nameEl = document.getElementById('qrName');
+  const phoneEl = document.getElementById('qrPhone');
   const nickEl = document.getElementById('qrNick');
   const agreeEl = document.getElementById('qrAgree');
+  const privacyEl = document.getElementById('qrPrivacy');
   const msgEl = document.getElementById('qrMsg');
 
   btn.addEventListener('click', async () => {
-    const nickname = (nickEl.value || '').trim();
-    if (nickname.length < 2 || nickname.length > 10) {
-      msgEl.textContent = '닉네임 2~10자로 입력해주세요.';
+    const fullName = (nameEl.value || '').trim();
+    const phoneRaw = (phoneEl.value || '').trim();
+    const phone = phoneRaw.replace(/[^0-9]/g, '');
+    const nickname = ((nickEl.value || '').trim() || fullName).slice(0, 10);
+
+    if (fullName.length < 2) {
+      msgEl.textContent = '이름을 입력해주세요.';
       return;
     }
+    if (phone.length < 10 || phone.length > 11) {
+      msgEl.textContent = '연락처를 정확히 입력해주세요.';
+      return;
+    }
+    if (!privacyEl.checked) {
+      msgEl.textContent = '개인정보 수집/이용 동의는 필수입니다.';
+      return;
+    }
+    if (!agreeEl.checked) {
+      msgEl.textContent = '마케팅 정보 수신 동의는 필수입니다.';
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = '등록 중...';
     try {
       const isMj = mode === 'mjolnir';
       const payload = isMj
-        ? { source_mode:'mjolnir', score:toNum(qs.get('score')), height_cm:toNum(qs.get('height')), shoulder_cm:toNum(qs.get('shoulder')), ts:qs.get('ts') }
-        : { source_mode:'vbt', exercise:qs.get('exercise'), weight_kg:toNum(qs.get('weight')), sets:toNum(qs.get('sets')), reps:toNum(qs.get('reps')), e1rm:toNum(qs.get('e1rm')), power_score:toNum(qs.get('power')), ts:qs.get('ts') };
+        ? {
+            source_mode:'mjolnir',
+            score:toNum(qs.get('score')),
+            height_cm:toNum(qs.get('height')),
+            shoulder_cm:toNum(qs.get('shoulder')),
+            ts:qs.get('ts'),
+            lead: { full_name: fullName, phone, marketing_consent: true, privacy_consent: true },
+          }
+        : {
+            source_mode:'vbt',
+            exercise:qs.get('exercise'),
+            weight_kg:toNum(qs.get('weight')),
+            sets:toNum(qs.get('sets')),
+            reps:toNum(qs.get('reps')),
+            e1rm:toNum(qs.get('e1rm')),
+            power_score:toNum(qs.get('power')),
+            ts:qs.get('ts'),
+            lead: { full_name: fullName, phone, marketing_consent: true, privacy_consent: true },
+          };
 
       const { data: resultData, error: rErr } = await sb.from('spoex_results').insert({
         mode: '1rm',
@@ -451,7 +509,8 @@ async function showQrRegistrationView() {
 
       const { error: gErr } = await sb.from('spoex_registrations').insert({
         nickname,
-        marketing_consent: !!agreeEl.checked,
+        marketing_consent: true,
+        consent_timestamp: new Date().toISOString(),
         result_id: resultData.id,
       });
       if (gErr) throw gErr;
@@ -463,7 +522,7 @@ async function showQrRegistrationView() {
       msgEl.style.color = '#ff8a8a';
       msgEl.textContent = `등록 실패: ${e?.message || e}`;
       btn.disabled = false;
-      btn.textContent = '리더보드 등록';
+      btn.textContent = '결과 등록하기';
     }
   });
 }

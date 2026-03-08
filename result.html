@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Roomfit — 내 결과</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #5252FA;
+    --accent: #BAFC27;
+    --bg: #0A0A0F;
+    --surface: #12121A;
+    --surface2: #1A1A25;
+    --text: #EEEEF2;
+    --text-dim: #8888A0;
+    --orange: #FF6B35;
+  }
+  html, body {
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+  }
+  .container {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+  .logo span { color: var(--accent); font-weight: 700; }
+  .result-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .mode-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .mode-mjolnir { background: var(--orange); color: #fff; }
+  .mode-vbt { background: var(--primary); color: #fff; }
+  .score-value {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1;
+    margin: 8px 0 4px;
+  }
+  .score-label {
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .stat-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 8px;
+  }
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .form-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .form-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .input-field {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 12px;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: #555; }
+  .checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .checkbox-row input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--accent);
+    width: 16px; height: 16px;
+    flex-shrink: 0;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #000;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary:not(:disabled):active { opacity: 0.8; }
+  .success-msg {
+    text-align: center;
+    padding: 20px;
+    display: none;
+  }
+  .success-msg.show { display: block; }
+  .success-msg .check { font-size: 48px; margin-bottom: 8px; }
+  .success-msg .msg { font-size: 15px; color: var(--text-dim); }
+  .home-link {
+    display: block;
+    text-align: center;
+    margin-top: auto;
+    padding: 16px;
+    color: var(--text-dim);
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--accent); }
+  .home-link span { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">SPOEX 2026 · <span>Roomfit</span></div>
+
+  <div class="result-card" id="resultCard">
+    <div class="mode-badge" id="modeBadge"></div>
+    <div class="score-value" id="scoreValue"></div>
+    <div class="score-label" id="scoreLabel"></div>
+    <div class="stats" id="statsGrid"></div>
+  </div>
+
+  <div class="form-card" id="formCard">
+    <div class="form-title">리더보드에 등록하기</div>
+    <input type="text" class="input-field" id="nickname" placeholder="닉네임 (2~10자)" maxlength="10" autocomplete="off">
+    <div class="checkbox-row">
+      <input type="checkbox" id="marketingAgree">
+      <label for="marketingAgree">마케팅 정보 수신에 동의합니다 (선택)</label>
+    </div>
+    <button class="btn-primary" id="submitBtn" disabled>리더보드 등록</button>
+  </div>
+
+  <div class="success-msg" id="successMsg">
+    <div class="check">🎉</div>
+    <div class="msg">리더보드에 등록되었습니다!</div>
+  </div>
+
+  <a href="https://roomfit.kr" class="home-link">🏠 <span>roomfit.kr</span> 방문하기</a>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const mode = params.get('mode') || 'mjolnir';
+const isMjolnir = mode === 'mjolnir';
+
+// 결과 카드
+const badge = document.getElementById('modeBadge');
+badge.textContent = isMjolnir ? '🔨 묠니르' : '🏋️ AI-VBT';
+badge.className = `mode-badge ${isMjolnir ? 'mode-mjolnir' : 'mode-vbt'}`;
+
+const scoreEl = document.getElementById('scoreValue');
+const labelEl = document.getElementById('scoreLabel');
+const grid = document.getElementById('statsGrid');
+
+if (isMjolnir) {
+  const score = params.get('score') || '0';
+  const height = params.get('height') || '--';
+  const shoulder = params.get('shoulder');
+  scoreEl.textContent = Number(score).toLocaleString();
+  scoreEl.style.color = 'var(--orange)';
+  labelEl.textContent = '점';
+  let statsHtml = `<div class="stat-item"><div class="stat-value">${height}cm</div><div class="stat-label">최대 높이</div></div>`;
+  if (shoulder) {
+    const ratio = ((parseFloat(height) / parseFloat(shoulder)) * 100).toFixed(1);
+    statsHtml += `<div class="stat-item"><div class="stat-value">${ratio}%</div><div class="stat-label">어깨 대비</div></div>`;
+  }
+  grid.innerHTML = statsHtml;
+} else {
+  const exercise = params.get('exercise') || '--';
+  const weight = params.get('weight') || '--';
+  const sets = params.get('sets') || '--';
+  const reps = params.get('reps') || '--';
+  const e1rm = params.get('e1rm');
+  const power = params.get('power');
+  scoreEl.textContent = power ? Number(power).toLocaleString() : '--';
+  scoreEl.style.color = 'var(--primary)';
+  labelEl.textContent = power ? 'Power Score' : '';
+  let statsHtml = `
+    <div class="stat-item"><div class="stat-value">${exercise}</div><div class="stat-label">운동</div></div>
+    <div class="stat-item"><div class="stat-value">${weight}kg</div><div class="stat-label">무게</div></div>
+    <div class="stat-item"><div class="stat-value">${sets}세트 ${reps}렙</div><div class="stat-label">볼륨</div></div>
+  `;
+  if (e1rm) statsHtml += `<div class="stat-item"><div class="stat-value">${e1rm}kg</div><div class="stat-label">추정 1RM</div></div>`;
+  grid.innerHTML = statsHtml;
+}
+
+// 닉네임 입력
+const nicknameEl = document.getElementById('nickname');
+const submitBtn = document.getElementById('submitBtn');
+nicknameEl.addEventListener('input', () => {
+  const len = nicknameEl.value.trim().length;
+  submitBtn.disabled = len < 2 || len > 10;
+});
+
+// 등록
+submitBtn.addEventListener('click', async () => {
+  submitBtn.disabled = true;
+  submitBtn.textContent = '등록 중...';
+  const nickname = nicknameEl.value.trim();
+  const marketing = document.getElementById('marketingAgree').checked;
+
+  // TODO: Supabase 연동
+  // const { data, error } = await supabase.from('leaderboard').insert({
+  //   mode, nickname, marketing,
+  //   score: isMjolnir ? Number(params.get('score')) : null,
+  //   power_score: !isMjolnir ? Number(params.get('power')) : null,
+  //   ...
+  // });
+
+  // 임시: 성공으로 처리
+  await new Promise(r => setTimeout(r, 500));
+
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('successMsg').classList.add('show');
+});
+</script>
+</body>
+</html>

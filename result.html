@@ -886,7 +886,7 @@ function renderShareCanvas(img) {
     const sh = qs.get('shoulder');
     if (h && sh) {
       const pct = ((parseFloat(h) / parseFloat(sh)) * 100).toFixed(1);
-      ctx.fillText('어깨 대비 ' + pct + '%', W/2, 640);
+      ctx.fillText(pct + '%', W/2, 640);
     } else if (h) {
       ctx.fillText(h + 'cm', W/2, 640);
     }

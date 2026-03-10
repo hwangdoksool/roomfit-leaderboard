@@ -380,7 +380,7 @@ const MJ_PREFIX = ['전설의', '불멸의', '고대의', '최후의', '진정�
 const VBT_PREFIX = ['ULTRA', 'MEGA', 'HYPER', 'SUPREME', 'PRIME', 'ELITE', 'APEX', 'OMEGA', 'TURBO', 'CORE', 'FURY', 'MAX', 'NEO', 'TITAN'];
 
 function _genTitle(rank, isMj, seed) {
-  const s2 = (seed >> 3) | 1; // secondary seed for modifier
+  const s2 = (seed * 2654435761 >>> 0) % 9999; // better spread via Knuth multiplicative hash
   if (isMj) {
     const pfx = seededPick(MJ_PREFIX, s2);
     if (rank === 1) return `⚡ ${pfx} 토르의 후계자`;

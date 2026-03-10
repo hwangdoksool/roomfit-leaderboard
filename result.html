@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -18,17 +19,19 @@
     --text: #EEEEF2;
     --text-dim: #8888A0;
     --orange: #FF6B35;
+    --danger: #ff6b6b;
   }
   html, body {
     font-family: 'Pretendard', -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
   }
   .container {
     max-width: 420px;
     margin: 0 auto;
-    padding: 24px 20px;
+    padding: 20px 20px env(safe-area-inset-bottom, 20px);
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -38,15 +41,33 @@
     font-size: 13px;
     color: var(--text-dim);
     letter-spacing: 2px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
   .logo span { color: var(--accent); font-weight: 700; }
+
+  /* ── Step Indicator ── */
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #333;
+    transition: all .3s;
+  }
+  .step-dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+  .step-dot.done { background: var(--primary); }
+
+  /* ── Result Card ── */
   .result-card {
     background: var(--surface);
     border-radius: 16px;
     padding: 24px;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
   .mode-badge {
     display: inline-block;
@@ -64,10 +85,7 @@
     line-height: 1;
     margin: 8px 0 4px;
   }
-  .score-label {
-    font-size: 14px;
-    color: var(--text-dim);
-  }
+  .score-label { font-size: 14px; color: var(--text-dim); }
   .stats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -79,26 +97,20 @@
     border-radius: 10px;
     padding: 12px 8px;
   }
-  .stat-value {
-    font-size: 18px;
-    font-weight: 700;
-  }
-  .stat-label {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
+  .stat-value { font-size: 18px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ── Form ── */
   .form-card {
     background: var(--surface);
     border-radius: 16px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
-  .form-title {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
+  .form-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .form-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.4; }
+  .input-group { margin-bottom: 12px; }
+  .input-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; font-weight: 600; }
   .input-field {
     width: 100%;
     padding: 12px 14px;
@@ -109,15 +121,16 @@
     font-size: 15px;
     font-family: inherit;
     outline: none;
-    margin-bottom: 12px;
   }
   .input-field:focus { border-color: var(--accent); }
   .input-field::placeholder { color: #555; }
+  .input-field.error { border-color: var(--danger); }
+  .error-msg { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; }
   .checkbox-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     font-size: 13px;
     color: var(--text-dim);
     line-height: 1.4;
@@ -128,6 +141,9 @@
     width: 16px; height: 16px;
     flex-shrink: 0;
   }
+  .checkbox-row .required { color: var(--accent); font-weight: 600; }
+  .checkbox-row .optional { color: var(--text-dim); }
+
   .btn-primary {
     width: 100%;
     padding: 14px;
@@ -143,14 +159,142 @@
   }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-primary:not(:disabled):active { opacity: 0.8; }
-  .success-msg {
-    text-align: center;
-    padding: 20px;
-    display: none;
+
+  .btn-secondary {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
   }
-  .success-msg.show { display: block; }
-  .success-msg .check { font-size: 48px; margin-bottom: 8px; }
-  .success-msg .msg { font-size: 15px; color: var(--text-dim); }
+  .btn-secondary:active { background: #222; }
+
+  /* ── Rank Screen ── */
+  .rank-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .rank-emoji { font-size: 48px; margin-bottom: 8px; }
+  .rank-text { font-size: 14px; color: var(--text-dim); margin-bottom: 4px; }
+  .rank-number { font-size: 48px; font-weight: 900; color: var(--accent); }
+  .rank-suffix { font-size: 20px; font-weight: 600; color: var(--text-dim); }
+  .rank-name { font-size: 18px; font-weight: 700; margin-top: 8px; }
+
+  .leaderboard-mini {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .lb-title { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; font-weight: 600; }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 8px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+  }
+  .lb-row.me { background: rgba(186,252,39,.1); border: 1px solid rgba(186,252,39,.3); }
+  .lb-rank { width: 32px; font-size: 16px; font-weight: 800; text-align: center; }
+  .lb-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .lb-score { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .lb-me-badge {
+    background: var(--accent);
+    color: #000;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+
+  /* ── Share Screen ── */
+  .share-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .share-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .share-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+  .share-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .share-check { font-size: 20px; }
+  .share-check.done { color: var(--accent); }
+  .share-check.pending { color: #444; }
+  .share-step-text { font-size: 13px; }
+  .share-step-text.done { color: var(--accent); text-decoration: line-through; }
+  .share-step-text.pending { color: var(--text-dim); }
+  .share-arrow { color: #444; font-size: 16px; }
+
+  .btn-instagram {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-instagram:active { opacity: 0.8; }
+
+  .complete-banner {
+    background: linear-gradient(135deg, rgba(186,252,39,.15), rgba(82,82,250,.15));
+    border: 1px solid rgba(186,252,39,.3);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .complete-emoji { font-size: 48px; margin-bottom: 8px; }
+  .complete-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .complete-desc { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── Share Card (for capture) ── */
+  .capture-card {
+    width: 360px;
+    padding: 32px 24px;
+    background: linear-gradient(135deg, #0A0A0F 0%, #12121A 100%);
+    border-radius: 20px;
+    text-align: center;
+    position: absolute;
+    left: -9999px;
+    top: 0;
+  }
+  .capture-card .c-logo { font-size: 11px; color: #666; letter-spacing: 2px; margin-bottom: 16px; }
+  .capture-card .c-logo span { color: var(--accent); font-weight: 700; }
+  .capture-card .c-score { font-size: 64px; font-weight: 900; line-height: 1; }
+  .capture-card .c-label { font-size: 14px; color: #888; margin-top: 4px; }
+  .capture-card .c-rank { font-size: 18px; font-weight: 700; color: var(--accent); margin-top: 12px; }
+  .capture-card .c-name { font-size: 16px; font-weight: 600; margin-top: 8px; color: #ccc; }
+  .capture-card .c-footer { font-size: 11px; color: #555; margin-top: 20px; }
+  .capture-card .c-stats { display: flex; justify-content: center; gap: 16px; margin-top: 12px; }
+  .capture-card .c-stat { font-size: 12px; color: #888; }
+  .capture-card .c-stat b { color: #ddd; font-size: 14px; }
+
+  /* ── Utility ── */
+  .hidden { display: none !important; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
   .home-link {
     display: block;
     text-align: center;
@@ -168,164 +312,523 @@
 <div class="container">
   <div class="logo">SPOEX 2026 · <span>Roomfit</span></div>
 
-  <div class="result-card" id="resultCard">
-    <div class="mode-badge" id="modeBadge"></div>
-    <div class="score-value" id="scoreValue"></div>
-    <div class="score-label" id="scoreLabel"></div>
-    <div class="stats" id="statsGrid"></div>
+  <!-- Step dots -->
+  <div class="steps" id="steps">
+    <div class="step-dot active" data-step="1"></div>
+    <div class="step-dot" data-step="2"></div>
+    <div class="step-dot" data-step="3"></div>
+    <div class="step-dot" data-step="4"></div>
   </div>
 
-  <div class="form-card" id="formCard">
-    <div class="form-title">리더보드에 등록하기</div>
-    <input type="text" class="input-field" id="nickname" placeholder="닉네임 (2~10자)" maxlength="10" autocomplete="off">
-    <div class="checkbox-row">
-      <input type="checkbox" id="marketingAgree">
-      <label for="marketingAgree">마케팅 정보 수신에 동의합니다 (선택)</label>
+  <!-- ═══ STEP 1: 결과 확인 + 등록 폼 ═══ -->
+  <div id="step1">
+    <div class="result-card" id="resultCard">
+      <div class="mode-badge" id="modeBadge"></div>
+      <div class="score-value" id="scoreValue"></div>
+      <div class="score-label" id="scoreLabel"></div>
+      <div class="stats" id="statsGrid"></div>
     </div>
-    <button class="btn-primary" id="submitBtn" disabled>리더보드 등록</button>
+
+    <div class="form-card">
+      <div class="form-title">🏆 리더보드 등록 + 이벤트 응모</div>
+      <div class="form-desc">등록하고 인스타 공유까지 하면 이벤트 응모 완료!</div>
+
+      <div class="input-group">
+        <div class="input-label">이름 *</div>
+        <input type="text" class="input-field" id="fullName" placeholder="실명 (당첨 시 연락용)" maxlength="20" autocomplete="name">
+        <div class="error-msg" id="nameError">이름을 입력해주세요</div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">연락처 *</div>
+        <input type="tel" class="input-field" id="phone" placeholder="010-0000-0000" maxlength="13" inputmode="numeric" autocomplete="tel">
+        <div class="error-msg" id="phoneError">연락처를 정확히 입력해주세요</div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">리더보드 닉네임 (선택)</div>
+        <input type="text" class="input-field" id="nickname" placeholder="미입력시 이름으로 표시" maxlength="10" autocomplete="off">
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="privacyAgree">
+        <label for="privacyAgree">개인정보 수집·이용에 동의합니다 <span class="required">(필수)</span></label>
+      </div>
+      <div class="checkbox-row mb-16">
+        <input type="checkbox" id="marketingAgree">
+        <label for="marketingAgree">마케팅 정보 수신에 동의합니다 <span class="optional">(선택)</span></label>
+      </div>
+
+      <button class="btn-primary" id="submitBtn">리더보드 등록하기</button>
+      <div class="error-msg" id="formError" style="text-align:center;margin-top:8px;"></div>
+    </div>
   </div>
 
-  <div class="success-msg" id="successMsg">
-    <div class="check">🎉</div>
-    <div class="msg">리더보드에 등록되었습니다!</div>
+  <!-- ═══ STEP 2: 내 순위 ═══ -->
+  <div id="step2" class="hidden">
+    <div class="rank-card">
+      <div class="rank-emoji" id="rankEmoji">🎉</div>
+      <div class="rank-text">현재 순위</div>
+      <div>
+        <span class="rank-number" id="rankNumber">-</span>
+        <span class="rank-suffix">등</span>
+      </div>
+      <div class="rank-name" id="rankName"></div>
+    </div>
+
+    <div class="leaderboard-mini" id="leaderboardMini">
+      <div class="lb-title" id="lbTitle">🏆 오늘의 리더보드</div>
+      <div id="lbRows"></div>
+    </div>
+
+    <button class="btn-primary mb-8" id="goShareBtn">📸 인스타 공유하고 이벤트 응모 완료하기</button>
+    <div style="text-align:center;font-size:12px;color:var(--text-dim);">인스타 공유까지 해야 이벤트 응모가 완료됩니다!</div>
   </div>
 
-  <a href="https://roomfit.kr" class="home-link">🏠 <span>roomfit.kr</span> 방문하기</a>
+  <!-- ═══ STEP 3: 인스타 공유 ═══ -->
+  <div id="step3" class="hidden">
+    <div class="share-card">
+      <div class="share-title">📸 인스타그램에 공유하기</div>
+      <div class="share-desc">아래 이미지를 저장한 후<br>인스타 스토리에 올려주세요!</div>
+
+      <div class="share-progress">
+        <span class="share-check done">✅</span>
+        <span class="share-step-text done">등록</span>
+        <span class="share-arrow">→</span>
+        <span class="share-check pending" id="shareCheck2">⬜</span>
+        <span class="share-step-text pending" id="shareText2">공유</span>
+        <span class="share-arrow">→</span>
+        <span class="share-check pending" id="shareCheck3">⬜</span>
+        <span class="share-step-text pending" id="shareText3">응모완료</span>
+      </div>
+
+      <!-- Preview of share card -->
+      <div id="sharePreview" style="display:flex;justify-content:center;margin-bottom:20px;"></div>
+
+      <button class="btn-instagram mb-8" id="shareIgBtn">📲 인스타그램 스토리에 공유</button>
+      <button class="btn-secondary mb-8" id="saveImageBtn">💾 이미지 저장 후 직접 공유</button>
+      <button class="btn-primary" id="confirmShareBtn" style="background:#333;color:var(--text);">공유 완료했어요! ✓</button>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 4: 응모 완료 ═══ -->
+  <div id="step4" class="hidden">
+    <div class="complete-banner">
+      <div class="complete-emoji">🎊</div>
+      <div class="complete-title">이벤트 응모 완료!</div>
+      <div class="complete-desc">
+        당첨자 발표는 SPOEX 종료 후<br>
+        등록하신 연락처로 개별 안내드립니다.
+      </div>
+    </div>
+
+    <div class="rank-card">
+      <div class="rank-text">최종 순위</div>
+      <div>
+        <span class="rank-number" id="finalRank">-</span>
+        <span class="rank-suffix">등</span>
+      </div>
+      <div class="rank-name" id="finalName"></div>
+    </div>
+
+    <a href="https://roomfit.kr" class="btn-secondary mb-8" style="display:block;text-align:center;text-decoration:none;">🏠 roomfit.kr 방문하기</a>
+    <button class="btn-secondary" onclick="location.href='/'">📊 전체 리더보드 보기</button>
+  </div>
+
+  <a href="https://roomfit.kr" class="home-link" id="homeLink">🏠 <span>roomfit.kr</span></a>
+</div>
+
+<!-- Capture card (offscreen) -->
+<div class="capture-card" id="captureCard">
+  <div class="c-logo">SPOEX 2026 · <span>Roomfit</span></div>
+  <div class="c-score" id="cScore"></div>
+  <div class="c-label" id="cLabel"></div>
+  <div class="c-stats" id="cStats"></div>
+  <div class="c-rank" id="cRank"></div>
+  <div class="c-name" id="cName"></div>
+  <div class="c-footer">roomfit.kr · AI-Powered Velocity Based Training</div>
 </div>
 
 <script>
-const params = new URLSearchParams(location.search);
-const mode = params.get('mode') || 'mjolnir';
+const qs = new URLSearchParams(location.search);
+const mode = qs.get('mode') || 'mjolnir';
 const isMjolnir = mode === 'mjolnir';
 
-// 결과 카드
+const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── State ──
+let registrationId = null;
+let resultId = null;
+let myRank = null;
+let myNickname = '';
+let myScore = 0;
+
+// ── Helpers ──
+function toNum(v) {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function formatPhone(v) {
+  const d = v.replace(/[^0-9]/g, '');
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return d.slice(0,3) + '-' + d.slice(3);
+  return d.slice(0,3) + '-' + d.slice(3,7) + '-' + d.slice(7,11);
+}
+
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step' + i).classList.toggle('hidden', i !== n);
+    const dot = document.querySelector(`.step-dot[data-step="${i}"]`);
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+  document.getElementById('homeLink').classList.toggle('hidden', n === 4);
+  window.scrollTo(0, 0);
+}
+
+// ── STEP 1: Result display ──
 const badge = document.getElementById('modeBadge');
 badge.textContent = isMjolnir ? '🔨 묠니르' : '🏋️ AI-VBT';
-badge.className = `mode-badge ${isMjolnir ? 'mode-mjolnir' : 'mode-vbt'}`;
+badge.className = 'mode-badge ' + (isMjolnir ? 'mode-mjolnir' : 'mode-vbt');
 
 const scoreEl = document.getElementById('scoreValue');
 const labelEl = document.getElementById('scoreLabel');
 const grid = document.getElementById('statsGrid');
 
 if (isMjolnir) {
-  const score = params.get('score') || '0';
-  const height = params.get('height') || '--';
-  const shoulder = params.get('shoulder');
-  scoreEl.textContent = Number(score).toLocaleString();
+  const score = qs.get('score') || '0';
+  const height = qs.get('height') || '--';
+  myScore = Number(score) || 0;
+  scoreEl.textContent = myScore.toLocaleString();
   scoreEl.style.color = 'var(--orange)';
   labelEl.textContent = '점';
-  let statsHtml = `<div class="stat-item"><div class="stat-value">${height}cm</div><div class="stat-label">최대 높이</div></div>`;
+  let html = `<div class="stat-item"><div class="stat-value">${esc(height)}cm</div><div class="stat-label">최대 높이</div></div>`;
+  const shoulder = qs.get('shoulder');
   if (shoulder) {
     const ratio = ((parseFloat(height) / parseFloat(shoulder)) * 100).toFixed(1);
-    statsHtml += `<div class="stat-item"><div class="stat-value">${ratio}%</div><div class="stat-label">어깨 대비</div></div>`;
+    html += `<div class="stat-item"><div class="stat-value">${ratio}%</div><div class="stat-label">어깨 대비</div></div>`;
   }
-  grid.innerHTML = statsHtml;
+  grid.innerHTML = html;
 } else {
-  const exercise = params.get('exercise') || '--';
-  const weight = params.get('weight') || '--';
-  const sets = params.get('sets') || '--';
-  const reps = params.get('reps') || '--';
-  const e1rm = params.get('e1rm');
-  const power = params.get('power');
-  scoreEl.textContent = power ? Number(power).toLocaleString() : '--';
+  const exercise = qs.get('exercise') || '--';
+  const weight = qs.get('weight') || '--';
+  const sets = qs.get('sets') || '--';
+  const reps = qs.get('reps') || '--';
+  const e1rm = qs.get('e1rm');
+  const power = qs.get('power');
+  myScore = Number(power) || 0;
+  scoreEl.textContent = myScore ? myScore.toLocaleString() : '--';
   scoreEl.style.color = 'var(--primary)';
-  labelEl.textContent = power ? 'Power Score' : '';
-  let statsHtml = `
-    <div class="stat-item"><div class="stat-value">${exercise}</div><div class="stat-label">운동</div></div>
-    <div class="stat-item"><div class="stat-value">${weight}kg</div><div class="stat-label">무게</div></div>
-    <div class="stat-item"><div class="stat-value">${sets}세트 ${reps}렙</div><div class="stat-label">볼륨</div></div>
+  labelEl.textContent = myScore ? 'Power Score' : '';
+  let html = `
+    <div class="stat-item"><div class="stat-value">${esc(exercise)}</div><div class="stat-label">운동</div></div>
+    <div class="stat-item"><div class="stat-value">${esc(weight)}kg</div><div class="stat-label">무게</div></div>
+    <div class="stat-item"><div class="stat-value">${esc(sets)}세트 ${esc(reps)}렙</div><div class="stat-label">볼륨</div></div>
   `;
-  if (e1rm) statsHtml += `<div class="stat-item"><div class="stat-value">${e1rm}kg</div><div class="stat-label">추정 1RM</div></div>`;
-  grid.innerHTML = statsHtml;
+  if (e1rm) html += `<div class="stat-item"><div class="stat-value">${esc(e1rm)}kg</div><div class="stat-label">추정 1RM</div></div>`;
+  grid.innerHTML = html;
 }
 
-// Supabase
-const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// 닉네임 입력
-const nicknameEl = document.getElementById('nickname');
-const submitBtn = document.getElementById('submitBtn');
-nicknameEl.addEventListener('input', () => {
-  const len = nicknameEl.value.trim().length;
-  submitBtn.disabled = len < 2 || len > 10;
+// Phone formatting
+document.getElementById('phone').addEventListener('input', function() {
+  const pos = this.selectionStart;
+  const prev = this.value;
+  this.value = formatPhone(this.value);
 });
 
-function toNum(v) {
-  if (v == null || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
+// ── STEP 1: Submit ──
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const fullName = document.getElementById('fullName').value.trim();
+  const phoneRaw = document.getElementById('phone').value.trim();
+  const phone = phoneRaw.replace(/[^0-9]/g, '');
+  const nick = document.getElementById('nickname').value.trim();
+  const privacyOk = document.getElementById('privacyAgree').checked;
+  const marketingOk = document.getElementById('marketingAgree').checked;
 
-// 등록
-submitBtn.addEventListener('click', async () => {
-  submitBtn.disabled = true;
-  submitBtn.textContent = '등록 중...';
+  // Validation
+  let valid = true;
+  if (fullName.length < 2) {
+    document.getElementById('fullName').classList.add('error');
+    document.getElementById('nameError').style.display = 'block';
+    valid = false;
+  } else {
+    document.getElementById('fullName').classList.remove('error');
+    document.getElementById('nameError').style.display = 'none';
+  }
+  if (phone.length < 10 || phone.length > 11) {
+    document.getElementById('phone').classList.add('error');
+    document.getElementById('phoneError').style.display = 'block';
+    valid = false;
+  } else {
+    document.getElementById('phone').classList.remove('error');
+    document.getElementById('phoneError').style.display = 'none';
+  }
+  if (!privacyOk) {
+    document.getElementById('formError').textContent = '개인정보 수집·이용 동의는 필수입니다.';
+    document.getElementById('formError').style.display = 'block';
+    valid = false;
+  } else {
+    document.getElementById('formError').style.display = 'none';
+  }
+  if (!valid) return;
+
+  myNickname = nick || fullName;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '등록 중...';
 
   try {
-    const nickname = nicknameEl.value.trim();
-    const marketing = document.getElementById('marketingAgree').checked;
-
+    // Build payload with lead info in set_details
     const payload = isMjolnir
       ? {
           source_mode: 'mjolnir',
-          score: toNum(params.get('score')),
-          height_cm: toNum(params.get('height')),
-          shoulder_cm: toNum(params.get('shoulder')),
-          ts: params.get('ts') || null,
+          score: toNum(qs.get('score')),
+          height_cm: toNum(qs.get('height')),
+          shoulder_cm: toNum(qs.get('shoulder')),
+          ts: qs.get('ts'),
+          lead: {
+            full_name: fullName,
+            phone: phone,
+            privacy_consent: true,
+            marketing_consent: marketingOk,
+            privacy_consented_at: new Date().toISOString(),
+          },
         }
       : {
           source_mode: 'vbt',
-          exercise: params.get('exercise') || null,
-          weight_kg: toNum(params.get('weight')),
-          sets: toNum(params.get('sets')),
-          reps: toNum(params.get('reps')),
-          e1rm: toNum(params.get('e1rm')),
-          power_score: toNum(params.get('power')),
-          ts: params.get('ts') || null,
+          exercise: qs.get('exercise'),
+          weight_kg: toNum(qs.get('weight')),
+          sets: toNum(qs.get('sets')),
+          reps: toNum(qs.get('reps')),
+          e1rm: toNum(qs.get('e1rm')),
+          power_score: toNum(qs.get('power')),
+          ts: qs.get('ts'),
+          lead: {
+            full_name: fullName,
+            phone: phone,
+            privacy_consent: true,
+            marketing_consent: marketingOk,
+            privacy_consented_at: new Date().toISOString(),
+          },
         };
 
-    // 1) 결과 저장 (기존 스키마 제약: mode는 '1rm'만 허용)
-    const resultRow = {
+    // 1) Save result
+    const { data: rData, error: rErr } = await sb.from('spoex_results').insert({
       mode: '1rm',
-      exercise_name: isMjolnir ? 'mjolnir' : (params.get('exercise') || 'vbt'),
-      estimated_1rm: isMjolnir ? null : toNum(params.get('e1rm')),
-      total_sets: toNum(params.get('sets')) || 0,
-      total_reps: toNum(params.get('reps')) || 0,
+      exercise_name: isMjolnir ? 'mjolnir' : (qs.get('exercise') || 'vbt'),
+      estimated_1rm: isMjolnir ? null : toNum(qs.get('e1rm')),
+      total_sets: toNum(qs.get('sets')) || 0,
+      total_reps: toNum(qs.get('reps')) || 0,
       set_details: payload,
       session_id: `qr_${Date.now()}`,
       device_id: 'spoex_kiosk',
-    };
+    }).select('id').single();
+    if (rErr) throw rErr;
+    resultId = rData.id;
 
-    const { data: resultData, error: resultError } = await sb
-      .from('spoex_results')
-      .insert(resultRow)
-      .select('id')
-      .single();
+    // 2) Save registration
+    const { data: regData, error: gErr } = await sb.from('spoex_registrations').insert({
+      nickname: myNickname.slice(0, 10),
+      marketing_consent: marketingOk,
+      consent_timestamp: new Date().toISOString(),
+      result_id: resultId,
+    }).select('id').single();
+    if (gErr) throw gErr;
+    registrationId = regData.id;
 
-    if (resultError) throw resultError;
-
-    // 2) 닉네임/동의 저장
-    const { error: regError } = await sb
-      .from('spoex_registrations')
-      .insert({
-        nickname,
-        marketing_consent: marketing,
-        result_id: resultData.id,
-      });
-
-    if (regError) throw regError;
-
-    document.getElementById('formCard').style.display = 'none';
-    document.getElementById('successMsg').classList.add('show');
+    // Go to step 2
+    await loadRankAndShow();
   } catch (e) {
     console.error(e);
-    alert('등록 실패: 네트워크/DB 상태를 확인해주세요.\n' + (e?.message || 'unknown error'));
-    submitBtn.disabled = false;
-    submitBtn.textContent = '리더보드 등록';
+    document.getElementById('formError').textContent = '등록 실패: ' + (e?.message || '네트워크 오류');
+    document.getElementById('formError').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '리더보드 등록하기';
   }
 });
+
+// ── STEP 2: Rank ──
+async function loadRankAndShow() {
+  const start = todayStart();
+  const sourceMode = isMjolnir ? 'mjolnir' : 'vbt';
+  const scoreField = isMjolnir ? 'score' : 'power_score';
+
+  const { data: rows } = await sb.from('spoex_results')
+    .select('id, set_details, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
+    .gte('created_at', start)
+    .limit(300);
+
+  const filtered = (rows || [])
+    .filter(r => r.set_details?.source_mode === sourceMode)
+    .sort((a, b) => Number(b.set_details?.[scoreField] || 0) - Number(a.set_details?.[scoreField] || 0));
+
+  // Find my rank
+  myRank = filtered.findIndex(r => r.id === resultId) + 1;
+  if (myRank === 0) myRank = filtered.length + 1;
+
+  const rankEmojis = ['🏆', '🥇', '🥈', '🥉'];
+  document.getElementById('rankEmoji').textContent = myRank <= 3 ? rankEmojis[myRank] : '🎉';
+  document.getElementById('rankNumber').textContent = myRank;
+  document.getElementById('rankName').textContent = myNickname + '님';
+
+  // Mini leaderboard
+  const lbRows = document.getElementById('lbRows');
+  const MEDALS = ['', '🥇', '🥈', '🥉'];
+  const top10 = filtered.slice(0, 10);
+  let html = '';
+  top10.forEach((r, i) => {
+    const rank = i + 1;
+    const nick = r.spoex_registrations?.[0]?.nickname || '???';
+    const score = Number(r.set_details?.[scoreField] || 0);
+    const isMe = r.id === resultId;
+    html += `<div class="lb-row${isMe ? ' me' : ''}">
+      <div class="lb-rank">${MEDALS[rank] || rank}</div>
+      <div class="lb-name">${esc(nick)}${isMe ? '<span class="lb-me-badge">나</span>' : ''}</div>
+      <div class="lb-score" style="color:${isMjolnir ? 'var(--orange)' : 'var(--accent)'}">${score}</div>
+    </div>`;
+  });
+
+  // If I'm not in top 10, show my position
+  if (myRank > 10) {
+    html += `<div style="text-align:center;color:var(--text-dim);padding:8px;font-size:13px;">⋮</div>`;
+    html += `<div class="lb-row me">
+      <div class="lb-rank">${myRank}</div>
+      <div class="lb-name">${esc(myNickname)}<span class="lb-me-badge">나</span></div>
+      <div class="lb-score" style="color:${isMjolnir ? 'var(--orange)' : 'var(--accent)'}">${myScore}</div>
+    </div>`;
+  }
+  lbRows.innerHTML = html;
+
+  document.getElementById('lbTitle').textContent = isMjolnir ? '🔨 묠니르 챌린지 순위' : '⚡ Power Score 순위';
+  setStep(2);
+}
+
+function todayStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+// ── STEP 2 → 3 ──
+document.getElementById('goShareBtn').addEventListener('click', () => {
+  prepareShareCard();
+  setStep(3);
+});
+
+// ── STEP 3: Share ──
+function prepareShareCard() {
+  const card = document.getElementById('captureCard');
+  const cScore = document.getElementById('cScore');
+  const cLabel = document.getElementById('cLabel');
+  const cStats = document.getElementById('cStats');
+  const cRank = document.getElementById('cRank');
+  const cName = document.getElementById('cName');
+
+  if (isMjolnir) {
+    cScore.textContent = myScore.toLocaleString();
+    cScore.style.color = 'var(--orange)';
+    cLabel.textContent = '묠니르 점수';
+    const h = qs.get('height') || '--';
+    cStats.innerHTML = `<div class="c-stat"><b>${h}cm</b> 최대높이</div>`;
+  } else {
+    cScore.textContent = myScore.toLocaleString();
+    cScore.style.color = 'var(--primary)';
+    cLabel.textContent = 'Power Score';
+    const ex = qs.get('exercise') || '';
+    const w = qs.get('weight') || '';
+    cStats.innerHTML = `<div class="c-stat"><b>${esc(ex)}</b></div><div class="c-stat"><b>${esc(w)}kg</b></div>`;
+  }
+  cRank.textContent = `🏆 ${myRank}등`;
+  cName.textContent = myNickname;
+
+  // Render preview
+  card.style.position = 'relative';
+  card.style.left = 'auto';
+  card.style.margin = '0 auto';
+  const preview = document.getElementById('sharePreview');
+  preview.innerHTML = '';
+  preview.appendChild(card);
+}
+
+// Share via Web Share API (Instagram)
+document.getElementById('shareIgBtn').addEventListener('click', async () => {
+  try {
+    const card = document.getElementById('captureCard');
+    card.style.position = 'relative';
+    card.style.left = 'auto';
+    const canvas = await html2canvas(card, { backgroundColor: '#0A0A0F', scale: 2 });
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'roomfit-result.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Roomfit SPOEX 2026',
+          text: `Roomfit에서 ${isMjolnir ? '묠니르' : 'Power Score'} ${myScore}점으로 ${myRank}등! 🏆 #Roomfit #SPOEX2026 #VBT`,
+        });
+        markShared();
+      } else {
+        // Fallback: download
+        downloadImage(canvas);
+        alert('이미지가 저장되었습니다!\n인스타그램 스토리에 직접 올려주세요.');
+      }
+    }, 'image/png');
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      console.error(e);
+      alert('공유에 실패했습니다. "이미지 저장" 버튼을 이용해주세요.');
+    }
+  }
+});
+
+// Save image
+document.getElementById('saveImageBtn').addEventListener('click', async () => {
+  const card = document.getElementById('captureCard');
+  card.style.position = 'relative';
+  card.style.left = 'auto';
+  const canvas = await html2canvas(card, { backgroundColor: '#0A0A0F', scale: 2 });
+  downloadImage(canvas);
+  alert('이미지가 저장되었습니다!\n인스타그램 스토리에 올려주세요 📸');
+});
+
+function downloadImage(canvas) {
+  const link = document.createElement('a');
+  link.download = 'roomfit-spoex-result.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Confirm share
+document.getElementById('confirmShareBtn').addEventListener('click', () => markShared());
+
+async function markShared() {
+  // Update UI
+  document.getElementById('shareCheck2').textContent = '✅';
+  document.getElementById('shareCheck2').className = 'share-check done';
+  document.getElementById('shareText2').className = 'share-step-text done';
+  document.getElementById('shareCheck3').textContent = '✅';
+  document.getElementById('shareCheck3').className = 'share-check done';
+  document.getElementById('shareText3').className = 'share-step-text done';
+
+  // Save ig_shared in set_details (update result)
+  if (resultId) {
+    try {
+      const { data: current } = await sb.from('spoex_results').select('set_details').eq('id', resultId).single();
+      if (current) {
+        const updated = { ...current.set_details, ig_shared: true, ig_shared_at: new Date().toISOString() };
+        await sb.from('spoex_results').update({ set_details: updated }).eq('id', resultId);
+      }
+    } catch (e) { console.error('ig_shared update failed', e); }
+  }
+
+  // Final rank
+  document.getElementById('finalRank').textContent = myRank;
+  document.getElementById('finalName').textContent = myNickname + '님';
+
+  setTimeout(() => setStep(4), 800);
+}
 </script>
 </body>
 </html>

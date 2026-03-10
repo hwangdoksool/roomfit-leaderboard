@@ -22,6 +22,7 @@
     --gold: #FFD700;
     --silver: #C0C0C0;
     --bronze: #CD7F32;
+    --orange: #FF6B35;
   }
 
   html, body {
@@ -48,144 +49,92 @@
     flex-shrink: 0;
   }
 
-  .header-left {
-    display: flex; align-items: center; gap: 20px;
-  }
-
-  .logo {
-    height: 36px;
-    filter: brightness(0) invert(1);
-  }
-
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .logo { height: 36px; filter: brightness(0) invert(1); }
   .event-badge {
-    background: var(--primary);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 5px 14px;
-    border-radius: 6px;
-    letter-spacing: 1px;
+    background: var(--primary); color: #fff;
+    font-size: 14px; font-weight: 700;
+    padding: 5px 14px; border-radius: 6px; letter-spacing: 1px;
   }
 
-  .header-right {
-    display: flex; align-items: center; gap: 28px;
+  .header-center { display: flex; gap: 4px; }
+  .tab-btn {
+    background: transparent; border: 1px solid #333; color: var(--text-dim);
+    font-size: 14px; font-weight: 600; padding: 8px 20px; border-radius: 8px;
+    cursor: pointer; font-family: inherit; transition: all .2s;
   }
+  .tab-btn:hover { border-color: #555; color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 800; }
 
+  .header-right { display: flex; align-items: center; gap: 28px; }
   .live-dot {
     display: flex; align-items: center; gap: 8px;
     font-size: 15px; font-weight: 600; color: var(--accent);
   }
-
   .live-dot::before {
-    content: '';
-    width: 10px; height: 10px;
-    background: var(--accent);
-    border-radius: 50%;
+    content: ''; width: 10px; height: 10px;
+    background: var(--accent); border-radius: 50%;
     animation: pulse-dot 1.5s ease-in-out infinite;
   }
-
   @keyframes pulse-dot {
     0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(186,252,39,.6); }
     50% { opacity: .7; box-shadow: 0 0 0 8px rgba(186,252,39,0); }
   }
-
-  .clock {
-    font-size: 28px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
-  }
-
+  .clock { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .btn-fs {
-    background: transparent;
-    border: 1px solid #444;
-    color: var(--text-dim);
-    font-size: 13px;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all .2s;
+    background: transparent; border: 1px solid #444; color: var(--text-dim);
+    font-size: 13px; padding: 6px 14px; border-radius: 6px;
+    cursor: pointer; font-family: inherit; transition: all .2s;
   }
   .btn-fs:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── MAIN ── */
   main {
-    flex: 1;
-    display: flex;
-    gap: 20px;
-    padding: 20px 48px 0;
-    min-height: 0;
+    flex: 1; display: flex; gap: 20px;
+    padding: 20px 48px 0; min-height: 0;
   }
 
   .panel {
-    flex: 1;
-    display: flex; flex-direction: column;
-    background: var(--bg-card);
-    border-radius: 16px;
-    border: 1px solid #222233;
-    overflow: hidden;
+    flex: 1; display: flex; flex-direction: column;
+    background: var(--bg-card); border-radius: 16px;
+    border: 1px solid #222233; overflow: hidden;
+    transition: flex .3s;
   }
+  .panel.hidden-panel { display: none; }
 
   .panel-header {
     padding: 20px 28px 16px;
     display: flex; align-items: center; gap: 14px;
     flex-shrink: 0;
   }
+  .panel-icon { font-size: 32px; line-height: 1; }
+  .panel-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+  .panel-title span { color: var(--text-dim); font-weight: 500; font-size: 16px; margin-left: 8px; }
 
-  .panel-icon {
-    font-size: 32px;
-    line-height: 1;
-  }
-
-  .panel-title {
-    font-size: 24px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-  }
-
-  .panel-title span {
-    color: var(--text-dim);
-    font-weight: 500;
-    font-size: 16px;
-    margin-left: 8px;
-  }
-
-  .panel.mjolnir .panel-header { border-bottom: 3px solid var(--primary); }
+  .panel.mjolnir .panel-header { border-bottom: 3px solid var(--orange); }
   .panel.power .panel-header { border-bottom: 3px solid var(--accent); }
 
   /* ── TABLE ── */
   .board {
-    flex: 1;
-    display: flex; flex-direction: column;
-    padding: 0 16px 12px;
-    min-height: 0;
+    flex: 1; display: flex; flex-direction: column;
+    padding: 0 16px 12px; min-height: 0;
   }
 
   .row-header, .row {
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    border-radius: 10px;
-    flex-shrink: 0;
+    display: flex; align-items: center;
+    padding: 0 16px; border-radius: 10px; flex-shrink: 0;
   }
 
   .row-header {
-    height: 36px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
+    height: 36px; font-size: 12px; font-weight: 600;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px;
   }
 
   .row {
-    height: 72px;
-    margin-bottom: 4px;
+    height: 62px; margin-bottom: 4px;
     transition: background .4s, transform .3s;
   }
-
   .row:nth-child(odd) { background: var(--bg-row); }
   .row:nth-child(even) { background: var(--bg-row-alt); }
 
@@ -193,10 +142,7 @@
   .row.top2 { background: linear-gradient(90deg, rgba(192,192,192,.08) 0%, transparent 60%); border-left: 3px solid var(--silver); }
   .row.top3 { background: linear-gradient(90deg, rgba(205,127,50,.08) 0%, transparent 60%); border-left: 3px solid var(--bronze); }
 
-  .row.highlight {
-    animation: highlight-pulse 2.5s ease-out;
-  }
-
+  .row.highlight { animation: highlight-pulse 2.5s ease-out; }
   @keyframes highlight-pulse {
     0% { background: rgba(186,252,39,.25); transform: scale(1.01); }
     100% { background: transparent; transform: scale(1); }
@@ -205,106 +151,64 @@
   .col-rank { width: 60px; text-align: center; font-size: 22px; font-weight: 800; }
   .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 28px; }
 
-  .col-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; }
-  .col-name { font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .col-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .panel.mjolnir .col-title { color: #FF855F; }
-  .panel.power .col-title { color: var(--accent); opacity: .8; }
-
-  .col-score {
-    width: 140px;
-    text-align: right;
-    font-size: 28px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
+  .col-name {
+    flex: 1; font-size: 20px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  .panel.mjolnir .col-score { color: var(--primary); }
+  .col-title {
+    width: 260px; font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 0 16px;
+  }
+  .panel.mjolnir .col-title { color: var(--orange); }
+  .panel.power .col-title { color: var(--accent); opacity: .85; }
+
+  .col-score {
+    width: 140px; text-align: right;
+    font-size: 28px; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .panel.mjolnir .col-score { color: var(--orange); }
   .panel.power .col-score { color: var(--accent); }
 
   .col-sub {
-    width: 120px;
-    text-align: right;
-    font-size: 13px;
-    color: var(--text-dim);
-    padding-left: 8px;
+    width: 120px; text-align: right;
+    font-size: 14px; color: var(--text-dim); padding-left: 8px;
   }
 
   .col-exercise {
-    width: 130px;
-    text-align: right;
-    font-size: 13px;
-    color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .col-grade {
-    width: 50px;
-    text-align: center;
-    font-size: 22px;
+    width: 130px; text-align: right;
+    font-size: 14px; color: var(--text-dim);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
   .row-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    color: var(--text-dim);
-    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 1; color: var(--text-dim); font-size: 18px;
   }
 
   /* ── FOOTER ── */
   footer {
     height: 72px;
     display: flex; align-items: center; justify-content: center;
-    gap: 60px;
-    padding: 0 48px;
+    gap: 60px; padding: 0 48px;
     background: linear-gradient(0deg, #111118 0%, var(--bg) 100%);
-    border-top: 1px solid #222233;
-    flex-shrink: 0;
+    border-top: 1px solid #222233; flex-shrink: 0;
   }
-
-  .stat {
-    display: flex; align-items: center; gap: 10px;
-  }
-
-  .stat-label {
-    font-size: 14px;
-    color: var(--text-dim);
-    font-weight: 500;
-  }
-
-  .stat-value {
-    font-size: 22px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-
+  .stat { display: flex; align-items: center; gap: 10px; }
+  .stat-label { font-size: 14px; color: var(--text-dim); font-weight: 500; }
+  .stat-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .stat-value.accent { color: var(--accent); }
-  .stat-value.primary { color: var(--primary); }
+  .stat-value.primary { color: var(--orange); }
+  .stat-divider { width: 1px; height: 32px; background: #333; }
+  .power-desc { font-size: 13px; color: var(--text-dim); max-width: 400px; }
 
-  .stat-divider {
-    width: 1px; height: 32px;
-    background: #333;
-  }
-
-  .power-desc {
-    font-size: 13px;
-    color: var(--text-dim);
-    max-width: 400px;
-  }
-
-  /* ── BG glow effects ── */
+  /* ── BG glow ── */
   .glow-left, .glow-right {
-    position: fixed;
-    width: 500px; height: 500px;
-    border-radius: 50%;
-    filter: blur(200px);
-    opacity: .08;
-    pointer-events: none;
-    z-index: -1;
+    position: fixed; width: 500px; height: 500px;
+    border-radius: 50%; filter: blur(200px); opacity: .08;
+    pointer-events: none; z-index: -1;
   }
   .glow-left { top: 200px; left: -100px; background: var(--primary); }
   .glow-right { top: 200px; right: -100px; background: var(--accent); }
@@ -321,45 +225,50 @@
       <img class="logo" src="https://wspn-images.wespion.workers.dev/roomfit-logo.png" alt="Roomfit">
       <div class="event-badge">SPOEX 2026</div>
     </div>
+    <div class="header-center">
+      <button class="tab-btn active" data-tab="both">🏆 전체</button>
+      <button class="tab-btn" data-tab="mjolnir">🔨 묠니르</button>
+      <button class="tab-btn" data-tab="power">⚡ Power Score</button>
+    </div>
     <div class="header-right">
       <div class="live-dot">LIVE</div>
       <div class="clock" id="clock">00:00:00</div>
-      <button class="btn-fs" id="btnFs" title="Fullscreen">&#x26F6; Fullscreen</button>
+      <button class="btn-fs" id="btnFs" title="Fullscreen">&#x26F6;</button>
     </div>
   </header>
 
   <main>
     <!-- Mjolnir -->
-    <div class="panel mjolnir">
+    <div class="panel mjolnir" id="panelMjolnir">
       <div class="panel-header">
-        <div class="panel-icon">&#x1F528;</div>
+        <div class="panel-icon">🔨</div>
         <div class="panel-title">묠니르 챌린지 <span>Top 10</span></div>
       </div>
       <div class="board" id="boardMjolnir">
         <div class="row-header">
           <div class="col-rank">#</div>
-          <div class="col-info"><div class="col-name">닉네임 / 칭호</div></div>
+          <div class="col-name">닉네임</div>
+          <div class="col-title">칭호</div>
           <div class="col-score">점수</div>
           <div class="col-sub">최대높이</div>
         </div>
-        <!-- rows injected -->
       </div>
     </div>
 
     <!-- Power Score -->
-    <div class="panel power">
+    <div class="panel power" id="panelPower">
       <div class="panel-header">
-        <div class="panel-icon">&#x26A1;</div>
+        <div class="panel-icon">⚡</div>
         <div class="panel-title">Power Score <span>Top 10</span></div>
       </div>
       <div class="board" id="boardPower">
         <div class="row-header">
           <div class="col-rank">#</div>
-          <div class="col-info"><div class="col-name">닉네임 / 칭호</div></div>
+          <div class="col-name">닉네임</div>
+          <div class="col-title">칭호</div>
           <div class="col-score">점수</div>
           <div class="col-exercise">운동</div>
         </div>
-        <!-- rows injected -->
       </div>
     </div>
   </main>
@@ -380,7 +289,7 @@
       <span class="stat-value accent" id="statPowerBest">-</span>
     </div>
     <div class="stat-divider"></div>
-    <div class="power-desc">Power Score = 속도 기반 근파워 측정 (VBT). 무게 x 속도로 폭발력을 수치화합니다.</div>
+    <div class="power-desc">Power Score = 속도 기반 근파워 측정 (VBT). 무게 × 속도로 폭발력을 수치화합니다.</div>
   </footer>
 </div>
 
@@ -389,193 +298,10 @@ const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const qs = new URLSearchParams(location.search);
+const MEDALS = ['', '🥇', '🥈', '🥉'];
 
-const MEDALS = ['', '\u{1F947}', '\u{1F948}', '\u{1F949}'];
-
-function toNum(v) {
-  if (v == null || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-async function showQrRegistrationView() {
-  const mode = qs.get('mode');
-  const app = document.querySelector('.app');
-  if (!app) return;
-
-  const resultSummary = mode === 'mjolnir'
-    ? `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">점수</div><div style="font-weight:800;font-size:20px;">${qs.get('score') || '-'}점</div></div>
-        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">최대 높이</div><div style="font-weight:800;font-size:20px;">${qs.get('height') || '-'}cm</div></div>
-      </div>`
-    : `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">Power Score</div><div style="font-weight:800;font-size:20px;">${qs.get('power') || '-'}</div></div>
-        <div style="background:#1A1A25;padding:10px;border-radius:10px;"><div style="font-size:11px;color:#9aa;">운동</div><div style="font-weight:800;font-size:16px;">${qs.get('exercise') || '-'}</div></div>
-      </div>`;
-
-  app.innerHTML = `
-    <main style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
-      <div style="width:min(92vw,560px);background:#12121A;border-radius:20px;padding:24px;">
-        <h2 style="font-size:26px;font-weight:800;margin-bottom:6px;">결과 등록</h2>
-        <div style="color:#9aa;margin-bottom:14px;">${mode === 'mjolnir' ? '🔨 묠니르' : '⚡ AI-VBT'} 결과를 확인하고 등록하세요</div>
-        ${resultSummary}
-
-        <input id="qrName" placeholder="이름 (필수)" maxlength="20" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;margin-bottom:8px;" />
-        <input id="qrPhone" placeholder="연락처 (필수, 숫자만)" inputmode="numeric" maxlength="13" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;margin-bottom:8px;" />
-        <input id="qrNick" placeholder="리더보드 닉네임 (선택, 미입력시 이름 사용)" maxlength="10" style="width:100%;padding:14px 12px;border-radius:10px;border:1px solid #333;background:#1A1A25;color:#fff;font-size:16px;" />
-
-        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;color:#ddd;font-size:13px;line-height:1.4;">
-          <input id="qrPrivacy" type="checkbox" style="margin-top:2px;" />
-          개인정보 수집/이용에 동의합니다 (필수)
-        </label>
-        <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;color:#ddd;font-size:13px;line-height:1.4;">
-          <input id="qrAgree" type="checkbox" style="margin-top:2px;" />
-          마케팅 정보 수신에 동의합니다 (필수)
-        </label>
-
-        <button id="qrSubmit" style="margin-top:16px;width:100%;padding:14px;border:none;border-radius:10px;background:#BAFC27;color:#111;font-weight:800;font-size:16px;">결과 등록하기</button>
-        <div id="qrMsg" style="margin-top:10px;color:#9aa;font-size:13px;"></div>
-      </div>
-    </main>
-  `;
-
-  const btn = document.getElementById('qrSubmit');
-  const nameEl = document.getElementById('qrName');
-  const phoneEl = document.getElementById('qrPhone');
-  const nickEl = document.getElementById('qrNick');
-  const agreeEl = document.getElementById('qrAgree');
-  const privacyEl = document.getElementById('qrPrivacy');
-  const msgEl = document.getElementById('qrMsg');
-
-  btn.addEventListener('click', async () => {
-    const fullName = (nameEl.value || '').trim();
-    const phoneRaw = (phoneEl.value || '').trim();
-    const phone = phoneRaw.replace(/[^0-9]/g, '');
-    const nickname = ((nickEl.value || '').trim() || fullName).slice(0, 10);
-
-    if (fullName.length < 2) {
-      msgEl.textContent = '이름을 입력해주세요.';
-      return;
-    }
-    if (phone.length < 10 || phone.length > 11) {
-      msgEl.textContent = '연락처를 정확히 입력해주세요.';
-      return;
-    }
-    if (!privacyEl.checked) {
-      msgEl.textContent = '개인정보 수집/이용 동의는 필수입니다.';
-      return;
-    }
-    if (!agreeEl.checked) {
-      msgEl.textContent = '마케팅 정보 수신 동의는 필수입니다.';
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '등록 중...';
-    try {
-      // ── Duplicate check ──
-      const qrTs = qs.get('ts');
-      if (qrTs) {
-        const { data: existing } = await sb.from('spoex_results')
-          .select('id, spoex_registrations!spoex_registrations_result_id_fkey(id)')
-          .filter('set_details->>ts', 'eq', qrTs)
-          .limit(1);
-        if (existing && existing.length > 0 && existing[0].spoex_registrations?.length > 0) {
-          msgEl.style.color = '#BAFC27';
-          msgEl.textContent = '이미 등록된 결과입니다! 리더보드로 이동합니다.';
-          setTimeout(() => location.href = '/', 1200);
-          return;
-        }
-      }
-
-      const isMj = mode === 'mjolnir';
-      const payload = isMj
-        ? {
-            source_mode:'mjolnir',
-            score:toNum(qs.get('score')),
-            height_cm:toNum(qs.get('height')),
-            shoulder_cm:toNum(qs.get('shoulder')),
-            ts:qs.get('ts'),
-            lead: { full_name: fullName, phone, marketing_consent: true, privacy_consent: true },
-          }
-        : {
-            source_mode:'vbt',
-            exercise:qs.get('exercise'),
-            weight_kg:toNum(qs.get('weight')),
-            sets:toNum(qs.get('sets')),
-            reps:toNum(qs.get('reps')),
-            e1rm:toNum(qs.get('e1rm')),
-            power_score:toNum(qs.get('power')),
-            ts:qs.get('ts'),
-            lead: { full_name: fullName, phone, marketing_consent: true, privacy_consent: true },
-          };
-
-      const { data: resultData, error: rErr } = await sb.from('spoex_results').insert({
-        mode: '1rm',
-        exercise_name: isMj ? 'mjolnir' : (qs.get('exercise') || 'vbt'),
-        estimated_1rm: isMj ? null : toNum(qs.get('e1rm')),
-        total_sets: toNum(qs.get('sets')) || 0,
-        total_reps: toNum(qs.get('reps')) || 0,
-        set_details: payload,
-        session_id: `qr_${Date.now()}`,
-        device_id: 'spoex_kiosk',
-      }).select('id').single();
-      if (rErr) throw rErr;
-
-      const { error: gErr } = await sb.from('spoex_registrations').insert({
-        nickname,
-        marketing_consent: true,
-        consent_timestamp: new Date().toISOString(),
-        result_id: resultData.id,
-      });
-      if (gErr) throw gErr;
-
-      msgEl.style.color = '#BAFC27';
-      msgEl.innerHTML = '등록 완료! <b>리더보드 보기</b>로 이동합니다.';
-
-      // 등록 직후 결과자가 바로 랭킹을 확인할 수 있도록 즉시 버튼 노출
-      const card = document.querySelector('main > div');
-      if (card && !document.getElementById('goBoardBtn')) {
-        const wrap = document.createElement('div');
-        wrap.style.marginTop = '12px';
-        wrap.innerHTML = `
-          <button id="goBoardBtn" style="width:100%;padding:12px;border:none;border-radius:10px;background:#5252FA;color:#fff;font-weight:800;font-size:15px;">지금 리더보드 보기</button>
-        `;
-        card.appendChild(wrap);
-        document.getElementById('goBoardBtn').addEventListener('click', () => {
-          location.href = '/';
-        });
-      }
-
-      setTimeout(() => location.href = '/', 900);
-    } catch (e) {
-      msgEl.style.color = '#ff8a8a';
-      msgEl.textContent = `등록 실패: ${e?.message || e}`;
-      btn.disabled = false;
-      btn.textContent = '결과 등록하기';
-    }
-  });
-}
-
-function todayStart() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function grade(score) {
-  if (score >= 100) return '\u{1F525}';
-  if (score >= 70)  return '\u26A1';
-  if (score >= 40)  return '\u{1F4AA}';
-  return '\u{1F422}';
-}
-
+// ── Title System ──
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-// ── Title System (deterministic per id) ──
 const titleCache = {};
 function getTitle(rank, isMj, id) {
   const key = id || `${rank}-${isMj}`;
@@ -584,7 +310,6 @@ function getTitle(rank, isMj, id) {
   titleCache[key] = t;
   return t;
 }
-
 function _genTitle(rank, isMj) {
   if (isMj) {
     if (rank === 1) return '⚡ 토르의 후계자';
@@ -603,6 +328,35 @@ function _genTitle(rank, isMj) {
   }
 }
 
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function todayStart() { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
+
+// ── Tab switching ──
+let currentTab = 'both';
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = btn.dataset.tab;
+    applyTab();
+  });
+});
+
+function applyTab() {
+  const mj = document.getElementById('panelMjolnir');
+  const pw = document.getElementById('panelPower');
+  if (currentTab === 'both') {
+    mj.classList.remove('hidden-panel');
+    pw.classList.remove('hidden-panel');
+  } else if (currentTab === 'mjolnir') {
+    mj.classList.remove('hidden-panel');
+    pw.classList.add('hidden-panel');
+  } else {
+    mj.classList.add('hidden-panel');
+    pw.classList.remove('hidden-panel');
+  }
+}
+
 // ── Previous IDs for highlight ──
 let prevMjolnirIds = new Set();
 let prevPowerIds = new Set();
@@ -618,7 +372,6 @@ function renderMjolnir(rows) {
     board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
     return;
   }
-
   const newIds = new Set(rows.map(r => r.id));
 
   rows.forEach((r, i) => {
@@ -630,22 +383,19 @@ function renderMjolnir(rows) {
     const heightCm = d.height_cm != null ? Number(d.height_cm).toFixed(1) + ' cm' : '-';
     const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
-
     const title = getTitle(rank, true, r.id);
+
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
-      <div class="col-info">
-        <div class="col-name">${esc(nickname)}</div>
-        <div class="col-title">${esc(title)}</div>
-      </div>
+      <div class="col-name">${esc(nickname)}</div>
+      <div class="col-title">${esc(title)}</div>
       <div class="col-score">${score}</div>
       <div class="col-sub">${heightCm}</div>
     `;
     board.appendChild(div);
   });
-
   prevMjolnirIds = newIds;
 }
 
@@ -659,7 +409,6 @@ function renderPower(rows) {
     board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
     return;
   }
-
   const newIds = new Set(rows.map(r => r.id));
 
   rows.forEach((r, i) => {
@@ -670,41 +419,30 @@ function renderPower(rows) {
     const isNew = !prevPowerIds.has(r.id) && prevPowerIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
     const score = Number(d.power_score ?? 0);
-
     const title = getTitle(rank, false, r.id);
+
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
-      <div class="col-info">
-        <div class="col-name">${esc(nickname)}</div>
-        <div class="col-title">${esc(title)}</div>
-      </div>
+      <div class="col-name">${esc(nickname)}</div>
+      <div class="col-title">${esc(title)}</div>
       <div class="col-score">${score}</div>
       <div class="col-exercise">${esc(d.exercise || r.exercise_name || '')}</div>
     `;
     board.appendChild(div);
   });
-
   prevPowerIds = newIds;
-}
-
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
 }
 
 // ── Fetch ──
 async function fetchAll() {
   const start = todayStart();
-
   const [resultsRes, countRes] = await Promise.all([
     sb.from('spoex_results')
       .select('id, mode, exercise_name, set_details, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
       .gte('created_at', start)
       .limit(300),
-
     sb.from('spoex_registrations')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', start),
@@ -722,7 +460,6 @@ async function fetchAll() {
     return true;
   });
 
-  // mode는 DB 제약상 1rm이라 set_details.source_mode로 분기
   const mjolnirRows = rows
     .filter(r => r.set_details?.source_mode === 'mjolnir')
     .sort((a, b) => Number(b.set_details?.score || 0) - Number(a.set_details?.score || 0))
@@ -736,54 +473,32 @@ async function fetchAll() {
   renderMjolnir(mjolnirRows);
   renderPower(powerRows);
 
-  // Stats
   document.getElementById('statCount').textContent = countRes.count ?? 0;
-  document.getElementById('statMjolnirBest').textContent =
-    mjolnirRows[0]?.set_details?.score ?? '-';
-  document.getElementById('statPowerBest').textContent =
-    powerRows[0]?.set_details?.power_score ?? '-';
+  document.getElementById('statMjolnirBest').textContent = mjolnirRows[0]?.set_details?.score ?? '-';
+  document.getElementById('statPowerBest').textContent = powerRows[0]?.set_details?.power_score ?? '-';
 }
 
-// ── Clock / Fullscreen / Realtime (리더보드 화면 전용) ──
-if (!qs.get('mode')) {
-  function updateClock() {
-    const now = new Date();
-    const c = document.getElementById('clock');
-    if (c) c.textContent = now.toLocaleTimeString('ko-KR', { hour12: false });
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
-
-  const fsBtn = document.getElementById('btnFs');
-  if (fsBtn) {
-    fsBtn.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen();
-      }
-    });
-  }
-
-  sb.channel('leaderboard')
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'spoex_registrations',
-    }, () => {
-      setTimeout(fetchAll, 500);
-    })
-    .subscribe();
-
-  setInterval(fetchAll, 30000);
+// ── Clock / Fullscreen / Realtime ──
+function updateClock() {
+  const c = document.getElementById('clock');
+  if (c) c.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: false });
 }
+setInterval(updateClock, 1000);
+updateClock();
 
-// ── Init ──
-if (qs.get('mode')) {
-  showQrRegistrationView();
-} else {
-  fetchAll();
-}
+document.getElementById('btnFs')?.addEventListener('click', () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  else document.exitFullscreen();
+});
+
+sb.channel('leaderboard')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'spoex_registrations' }, () => {
+    setTimeout(fetchAll, 500);
+  })
+  .subscribe();
+
+setInterval(fetchAll, 30000);
+fetchAll();
 </script>
 </body>
 </html>

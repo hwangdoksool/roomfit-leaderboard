@@ -501,6 +501,10 @@
       <div class="rank-name" id="finalName"></div>
     </div>
 
+    <div style="background:var(--surface);border-radius:12px;padding:16px;margin-bottom:12px;text-align:center;">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">📌 이 페이지를 북마크하면 순위 변동을 언제든 확인할 수 있습니다!</div>
+      <button class="btn-primary" onclick="location.reload()" style="background:var(--primary);">🔄 최신 순위 새로고침</button>
+    </div>
     <a href="https://roomfit.kr" class="btn-secondary mb-8" style="display:block;text-align:center;text-decoration:none;">🏠 roomfit.kr 방문하기</a>
     <button class="btn-secondary" onclick="location.href='/'">📊 전체 리더보드 보기</button>
   </div>
@@ -1081,7 +1085,16 @@ async function markShared() {
   ftEl.textContent = myTitle;
   ftEl.className = 'title-badge' + (isMjolnir ? ' mjolnir' : '');
 
-  setTimeout(() => setStep(4), 800);
+  setTimeout(async () => {
+    // Refresh rank before showing final screen
+    await loadRankAndShow();
+    document.getElementById('finalRank').textContent = myRank;
+    document.getElementById('finalName').textContent = myNickname + '님';
+    const ftEl2 = document.getElementById('finalTitle');
+    ftEl2.textContent = myTitle;
+    ftEl2.className = 'title-badge' + (isMjolnir ? ' mjolnir' : '');
+    setStep(4);
+  }, 800);
 }
 </script>
 </body>

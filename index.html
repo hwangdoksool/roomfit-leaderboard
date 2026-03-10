@@ -203,6 +203,40 @@
     flex: 1; color: var(--text-dim); font-size: 18px;
   }
 
+  /* Tier divider */
+  .tier-divider {
+    height: 1px; margin: 6px 16px;
+    background: linear-gradient(90deg, transparent, #333, transparent);
+    flex-shrink: 0;
+  }
+
+  /* Spotlight banner for new entry */
+  .spotlight {
+    background: linear-gradient(90deg, rgba(186,252,39,.12), rgba(82,82,250,.08), transparent);
+    border: 1px solid rgba(186,252,39,.35);
+    border-radius: 12px;
+    padding: 12px 24px;
+    margin: 0 48px 8px;
+    display: flex; align-items: center; gap: 20px;
+    animation: spotlight-glow 2s ease-in-out infinite alternate;
+    flex-shrink: 0;
+  }
+  .spotlight.hidden { display: none; }
+  @keyframes spotlight-glow {
+    from { border-color: rgba(186,252,39,.35); }
+    to { border-color: rgba(186,252,39,.65); }
+  }
+  .spotlight-new { font-size: 13px; color: var(--accent); font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+  .spotlight-name { font-size: 24px; font-weight: 800; }
+  .spotlight-title { font-size: 16px; font-weight: 600; }
+  .panel.mjolnir ~ .spotlight .spotlight-title,
+  .spotlight.mj .spotlight-title { color: var(--orange); }
+  .spotlight.vbt .spotlight-title { color: var(--accent); }
+  .spotlight-score { font-size: 28px; font-weight: 900; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .spotlight.mj .spotlight-score { color: var(--orange); }
+  .spotlight.vbt .spotlight-score { color: var(--accent); }
+  .spotlight-rank { font-size: 16px; color: var(--text-dim); white-space: nowrap; }
+
   /* ── FOOTER ── */
   footer {
     height: 72px;
@@ -251,6 +285,15 @@
       <button class="btn-fs" id="btnFs" title="Fullscreen">&#x26F6;</button>
     </div>
   </header>
+
+  <!-- Spotlight for new entries -->
+  <div class="spotlight hidden" id="spotlight">
+    <div class="spotlight-new">🎉 NEW</div>
+    <div class="spotlight-name" id="spotName">-</div>
+    <div class="spotlight-title" id="spotTitle">-</div>
+    <div class="spotlight-score" id="spotScore">-</div>
+    <div class="spotlight-rank" id="spotRank">-</div>
+  </div>
 
   <main>
     <!-- Mjolnir -->
@@ -315,32 +358,60 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const MEDALS = ['', '🥇', '🥈', '🥉'];
 
-// ── Title System ──
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+// ── Title System (unique per ID via hash-seed) ──
+function hashCode(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function seededPick(arr, seed) { return arr[seed % arr.length]; }
+
 const titleCache = {};
 function getTitle(rank, isMj, id) {
   const key = id || `${rank}-${isMj}`;
   if (titleCache[key]) return titleCache[key];
-  const t = _genTitle(rank, isMj);
+  const t = _genTitle(rank, isMj, hashCode(key));
   titleCache[key] = t;
   return t;
 }
-function _genTitle(rank, isMj) {
+
+// Modifiers to make every title unique
+const MJ_PREFIX = ['전설의', '불멸의', '고대의', '최후의', '진정한', '광기의', '폭풍의', '얼음의', '불꽃의', '영원의', '어둠의', '신성한', '무적의', '강철의'];
+const VBT_PREFIX = ['ULTRA', 'MEGA', 'HYPER', 'SUPREME', 'PRIME', 'ELITE', 'APEX', 'OMEGA', 'TURBO', 'CORE', 'FURY', 'MAX', 'NEO', 'TITAN'];
+
+function _genTitle(rank, isMj, seed) {
+  const s2 = (seed >> 3) | 1; // secondary seed for modifier
   if (isMj) {
-    if (rank === 1) return '⚡ 토르의 후계자';
-    if (rank === 2) return '🔨 묠니르의 주인';
-    if (rank === 3) return '🛡️ 아스가르드 전사';
-    if (rank <= 5) return pick(['💪 바이킹 챔피언', '⚔️ 발할라 입성자', '🐺 울프 워리어']);
-    if (rank <= 10) return pick(['🔥 미드가르드의 힘', '🪓 버서커', '⛰️ 산을 옮긴 자', '🦅 오딘의 눈']);
-    return pick(['🌊 바다를 가른 자', '🏔️ 서리 거인 사냥꾼', '⚓ 롱십의 선장']);
+    const pfx = seededPick(MJ_PREFIX, s2);
+    if (rank === 1) return `⚡ ${pfx} 토르의 후계자`;
+    if (rank === 2) return `🔨 ${pfx} 묠니르의 주인`;
+    if (rank === 3) return `🛡️ ${pfx} 아스가르드 전사`;
+    const t4 = ['바이킹 챔피언', '발할라 입성자', '울프 워리어', '전장의 사자'];
+    if (rank <= 5) return `⚔️ ${pfx} ${seededPick(t4, seed)}`;
+    const t6 = ['미드가르드의 힘', '버서커', '산을 옮긴 자', '오딘의 눈', '천둥의 아들', '대지의 수호자'];
+    if (rank <= 10) return `🔥 ${pfx} ${seededPick(t6, seed)}`;
+    const t11 = ['바다를 가른 자', '서리 거인 사냥꾼', '롱십의 선장', '피오르드 탐험가'];
+    return `🌊 ${pfx} ${seededPick(t11, seed)}`;
   } else {
-    if (rank === 1) return '🔥 EXPLOSIVE KING';
-    if (rank === 2) return '⚡ SPEED DEMON';
-    if (rank === 3) return '💥 POWER MACHINE';
-    if (rank <= 5) return pick(['🚀 VELOCITY MASTER', '🎯 PRECISION FORCE', '💎 DIAMOND LIFTER']);
-    if (rank <= 10) return pick(['💪 IRON WILL', '🦁 BEAST MODE', '⛓️ CHAIN BREAKER', '🌋 VOLCANIC POWER']);
-    return pick(['🏋️ RISING FORCE', '🔋 CHARGING UP', '📈 GAINS INCOMING']);
+    const pfx = seededPick(VBT_PREFIX, s2);
+    if (rank === 1) return `🔥 ${pfx} EXPLOSIVE`;
+    if (rank === 2) return `⚡ ${pfx} SPEED DEMON`;
+    if (rank === 3) return `💥 ${pfx} POWER MACHINE`;
+    const t4 = ['VELOCITY', 'PRECISION', 'DIAMOND', 'FORCE FIELD'];
+    if (rank <= 5) return `🚀 ${pfx} ${seededPick(t4, seed)}`;
+    const t6 = ['IRON WILL', 'BEAST MODE', 'CHAIN BREAKER', 'VOLCANIC', 'THUNDER LIFT', 'STEEL GRIP'];
+    if (rank <= 10) return `💪 ${pfx} ${seededPick(t6, seed)}`;
+    const t11 = ['RISING FORCE', 'CHARGING UP', 'GAINS INCOMING', 'RAW POWER'];
+    return `🏋️ ${pfx} ${seededPick(t11, seed)}`;
   }
+}
+
+// Tier boundaries for dividers
+function getTier(rank) {
+  if (rank <= 3) return 0;  // 🏆 Top 3
+  if (rank <= 5) return 1;  // ⚔️ Elite
+  if (rank <= 10) return 2; // 🔥 Challenger
+  return 3;
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -392,8 +463,19 @@ function renderMjolnir(rows) {
   }
   const newIds = new Set(rows.map(r => r.id));
 
+  let prevTier = -1;
   rows.forEach((r, i) => {
     const rank = i + 1;
+    const tier = getTier(rank);
+
+    // Tier divider
+    if (tier !== prevTier && prevTier >= 0) {
+      const sep = document.createElement('div');
+      sep.className = 'tier-divider';
+      board.appendChild(sep);
+    }
+    prevTier = tier;
+
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
     const d = r.set_details || {};
@@ -402,6 +484,9 @@ function renderMjolnir(rows) {
     const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
     const title = getTitle(rank, true, r.id);
+
+    // Track newest for spotlight
+    if (isNew) showSpotlight(nickname, title, score, rank, true);
 
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
@@ -429,8 +514,18 @@ function renderPower(rows) {
   }
   const newIds = new Set(rows.map(r => r.id));
 
+  let prevTier = -1;
   rows.forEach((r, i) => {
     const rank = i + 1;
+    const tier = getTier(rank);
+
+    if (tier !== prevTier && prevTier >= 0) {
+      const sep = document.createElement('div');
+      sep.className = 'tier-divider';
+      board.appendChild(sep);
+    }
+    prevTier = tier;
+
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
     const d = r.set_details || {};
@@ -438,6 +533,8 @@ function renderPower(rows) {
     const topClass = rank <= 3 ? ` top${rank}` : '';
     const score = Number(d.power_score ?? 0);
     const title = getTitle(rank, false, r.id);
+
+    if (isNew) showSpotlight(nickname, title, score, rank, false);
 
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
@@ -451,6 +548,23 @@ function renderPower(rows) {
     board.appendChild(div);
   });
   prevPowerIds = newIds;
+}
+
+// ── Spotlight ──
+let spotlightTimer = null;
+function showSpotlight(name, title, score, rank, isMj) {
+  const el = document.getElementById('spotlight');
+  el.classList.remove('hidden', 'mj', 'vbt');
+  el.classList.add(isMj ? 'mj' : 'vbt');
+  document.getElementById('spotName').textContent = name;
+  document.getElementById('spotTitle').textContent = title;
+  document.getElementById('spotScore').textContent = score;
+  document.getElementById('spotRank').textContent = `#${rank}`;
+  if (spotlightTimer) clearTimeout(spotlightTimer);
+  spotlightTimer = setTimeout(() => {
+    el.classList.add('hidden');
+    spotlightTimer = null;
+  }, 60000); // 1분
 }
 
 // ── Fetch ──

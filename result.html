@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Canvas API only — no html2canvas needed -->
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -443,11 +443,11 @@
     <div style="text-align:center;font-size:12px;color:var(--text-dim);">인스타 공유까지 해야 이벤트 응모가 완료됩니다!</div>
   </div>
 
-  <!-- ═══ STEP 3: 인스타 공유 ═══ -->
+  <!-- ═══ STEP 3: 셀카 + 인스타 공유 ═══ -->
   <div id="step3" class="hidden">
     <div class="share-card">
-      <div class="share-title">📸 인스타그램에 공유하기</div>
-      <div class="share-desc">아래 이미지를 저장해서 인스타 스토리에 올려주세요!<br><b style="color:var(--accent)">@wespion_roomfit</b> 태그하면 응모 완료! 🎉</div>
+      <div class="share-title">📸 셀카 찍고 스토리 공유!</div>
+      <div class="share-desc">셀카 위에 결과가 합성됩니다.<br><b style="color:var(--accent)">@wespion_roomfit</b> 태그하면 응모 완료! 🎉</div>
 
       <div class="share-progress">
         <span class="share-check done">✅</span>
@@ -460,11 +460,22 @@
         <span class="share-step-text pending" id="shareText3">응모완료</span>
       </div>
 
-      <!-- Preview of share card -->
-      <div id="sharePreview" style="display:flex;justify-content:center;margin-bottom:20px;"></div>
+      <!-- Selfie input -->
+      <input type="file" id="selfieInput" accept="image/*" capture="user" style="display:none">
+      <div id="selfieArea" style="margin-bottom:16px;">
+        <button class="btn-secondary mb-8" id="selfieBtn" style="border-color:var(--accent);color:var(--accent);">📷 셀카 찍기</button>
+        <button class="btn-secondary mb-8" id="galleryBtn" style="font-size:13px;">🖼️ 갤러리에서 선택</button>
+        <input type="file" id="galleryInput" accept="image/*" style="display:none">
+      </div>
+
+      <!-- Canvas preview -->
+      <div id="canvasPreview" style="display:flex;justify-content:center;margin-bottom:16px;">
+        <canvas id="shareCanvas" style="width:270px;height:480px;border-radius:12px;background:#111;"></canvas>
+      </div>
 
       <button class="btn-instagram mb-8" id="shareIgBtn">📲 인스타그램 스토리에 공유</button>
       <button class="btn-secondary mb-8" id="saveImageBtn">💾 이미지 저장 후 직접 공유</button>
+      <div style="text-align:center;margin-bottom:8px;font-size:12px;color:var(--text-dim);">셀카 없이도 공유 가능!</div>
       <button class="btn-primary" id="confirmShareBtn" style="background:#333;color:var(--text);">공유 완료했어요! ✓</button>
     </div>
   </div>
@@ -497,23 +508,7 @@
   <a href="https://roomfit.kr" class="home-link" id="homeLink">🏠 <span>roomfit.kr</span></a>
 </div>
 
-<!-- Capture card (offscreen, 1080x1920 for IG Story) -->
-<div class="capture-card" id="captureCard">
-  <div class="c-glow-left"></div>
-  <div class="c-glow-right"></div>
-  <div class="c-logo">SPOEX 2026 · <span>Roomfit</span></div>
-  <div class="c-title-badge" id="cTitleBadge"></div>
-  <div class="c-score" id="cScore"></div>
-  <div class="c-label" id="cLabel"></div>
-  <div class="c-stats" id="cStats"></div>
-  <div class="c-rank" id="cRank"></div>
-  <div class="c-name" id="cName"></div>
-  <div class="c-branding">
-    <div class="c-product">🏋️ 스마트 웨이트 머신</div>
-    <div class="c-ig">@wespion_roomfit</div>
-    <div class="c-footer">roomfit.kr</div>
-  </div>
-</div>
+<!-- Share card now rendered via Canvas API (no DOM element needed) -->
 
 <script>
 const qs = new URLSearchParams(location.search);
@@ -814,71 +809,185 @@ function todayStart() {
 
 // ── STEP 2 → 3 ──
 document.getElementById('goShareBtn').addEventListener('click', () => {
-  prepareShareCard();
+  renderShareCanvas();
   setStep(3);
 });
 
-// ── STEP 3: Share ──
-function prepareShareCard() {
-  const card = document.getElementById('captureCard');
-  const cScore = document.getElementById('cScore');
-  const cLabel = document.getElementById('cLabel');
-  const cStats = document.getElementById('cStats');
-  const cRank = document.getElementById('cRank');
-  const cName = document.getElementById('cName');
+// ── STEP 3: Canvas-based Share Card ──
+const W = 1080, H = 1920;
+let selfieImg = null;
 
-  const cTitleBadge = document.getElementById('cTitleBadge');
-  cTitleBadge.textContent = myTitle;
-  cTitleBadge.className = 'c-title-badge ' + (isMjolnir ? 'mjolnir' : 'vbt');
+function renderShareCanvas(img) {
+  const canvas = document.getElementById('shareCanvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
 
-  if (isMjolnir) {
-    cScore.textContent = myScore.toLocaleString();
-    cScore.style.color = 'var(--orange)';
-    cLabel.textContent = '묠니르 점수';
-    const h = qs.get('height') || '--';
-    cStats.innerHTML = `<div class="c-stat"><b>${h}cm</b> 최대높이</div>`;
+  // 1) Background
+  if (img) {
+    // Draw selfie cover-fit
+    const iw = img.width, ih = img.height;
+    const scale = Math.max(W / iw, H / ih);
+    const sw = iw * scale, sh = ih * scale;
+    const sx = (W - sw) / 2, sy = (H - sh) / 2;
+    ctx.drawImage(img, sx, sy, sw, sh);
+    // Dark overlay for readability
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, W, H);
   } else {
-    cScore.textContent = myScore.toLocaleString();
-    cScore.style.color = 'var(--primary)';
-    cLabel.textContent = 'Power Score';
+    // Default dark gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0A0A0F');
+    grad.addColorStop(0.4, '#111118');
+    grad.addColorStop(1, '#0A0A0F');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    // Glow blobs
+    drawBlob(ctx, 150, 500, 300, 'rgba(82,82,250,0.12)');
+    drawBlob(ctx, W - 150, H - 600, 300, 'rgba(186,252,39,0.10)');
+  }
+
+  // 2) Top: SPOEX 2026 · Roomfit
+  ctx.textAlign = 'center';
+  ctx.font = '600 28px Pretendard, sans-serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('SPOEX 2026 · ', W/2 - 50, 200);
+  ctx.fillStyle = '#BAFC27';
+  ctx.font = '700 28px Pretendard, sans-serif';
+  ctx.fillText('Roomfit', W/2 + 80, 200);
+
+  // 3) Title badge
+  const titleColor = isMjolnir ? '#FF855F' : '#BAFC27';
+  const titleBg = isMjolnir ? 'rgba(255,107,53,0.2)' : 'rgba(186,252,39,0.15)';
+  const titleBorder = isMjolnir ? 'rgba(255,107,53,0.5)' : 'rgba(186,252,39,0.4)';
+  ctx.font = '900 42px Pretendard, sans-serif';
+  const titleW = ctx.measureText(myTitle).width + 60;
+  const titleX = (W - titleW) / 2, titleY = 280;
+  roundRect(ctx, titleX, titleY, titleW, 64, 32, titleBg, titleBorder);
+  ctx.fillStyle = titleColor;
+  ctx.fillText(myTitle, W/2, titleY + 45);
+
+  // 4) Score (huge)
+  const scoreColor = isMjolnir ? '#FF6B35' : '#5252FA';
+  ctx.font = '900 180px Pretendard, sans-serif';
+  ctx.fillStyle = scoreColor;
+  ctx.fillText(myScore.toLocaleString(), W/2, 560);
+
+  // 5) Score label
+  ctx.font = '500 36px Pretendard, sans-serif';
+  ctx.fillStyle = '#888';
+  ctx.fillText(isMjolnir ? '묠니르 점수' : 'Power Score', W/2, 610);
+
+  // 6) Stats line
+  ctx.font = '700 32px Pretendard, sans-serif';
+  ctx.fillStyle = '#ddd';
+  if (isMjolnir) {
+    const h = qs.get('height') || '--';
+    ctx.fillText(h + 'cm 최대높이', W/2, 680);
+  } else {
     const ex = qs.get('exercise') || '';
     const w = qs.get('weight') || '';
-    cStats.innerHTML = `<div class="c-stat"><b>${esc(ex)}</b></div><div class="c-stat"><b>${esc(w)}kg</b></div>`;
+    ctx.fillText(ex + '  ' + w + 'kg', W/2, 680);
   }
-  cRank.textContent = `🏆 ${myRank}등`;
-  cName.textContent = myNickname;
 
-  // Render preview
-  card.style.position = 'relative';
-  card.style.left = 'auto';
-  card.style.margin = '0 auto';
-  const preview = document.getElementById('sharePreview');
-  preview.innerHTML = '';
-  preview.appendChild(card);
+  // 7) Rank
+  ctx.font = '800 56px Pretendard, sans-serif';
+  ctx.fillStyle = '#BAFC27';
+  ctx.fillText('🏆 ' + myRank + '등', W/2, 790);
+
+  // 8) Nickname
+  ctx.font = '600 44px Pretendard, sans-serif';
+  ctx.fillStyle = '#ccc';
+  ctx.fillText(myNickname, W/2, 860);
+
+  // 9) Bottom branding
+  ctx.font = '500 28px Pretendard, sans-serif';
+  ctx.fillStyle = '#777';
+  ctx.fillText('🏋️ 스마트 웨이트 머신', W/2, H - 240);
+  ctx.font = '700 38px Pretendard, sans-serif';
+  ctx.fillStyle = '#BAFC27';
+  ctx.fillText('@wespion_roomfit', W/2, H - 180);
+  ctx.font = '400 26px Pretendard, sans-serif';
+  ctx.fillStyle = '#555';
+  ctx.fillText('roomfit.kr', W/2, H - 130);
 }
 
-// Share via Web Share API (Instagram)
+function drawBlob(ctx, x, y, r, color) {
+  ctx.save();
+  ctx.filter = 'blur(100px)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+}
+
+// ── Selfie handlers ──
+document.getElementById('selfieBtn').addEventListener('click', () => {
+  document.getElementById('selfieInput').click();
+});
+document.getElementById('galleryBtn').addEventListener('click', () => {
+  document.getElementById('galleryInput').click();
+});
+document.getElementById('selfieInput').addEventListener('change', handleImageSelect);
+document.getElementById('galleryInput').addEventListener('change', handleImageSelect);
+
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      selfieImg = img;
+      renderShareCanvas(img);
+      document.getElementById('selfieBtn').textContent = '📷 다시 찍기';
+      document.getElementById('selfieBtn').style.borderColor = '#555';
+      document.getElementById('selfieBtn').style.color = 'var(--text-dim)';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Share / Save ──
+function getShareBlob() {
+  return new Promise(resolve => {
+    document.getElementById('shareCanvas').toBlob(resolve, 'image/png');
+  });
+}
+
 document.getElementById('shareIgBtn').addEventListener('click', async () => {
   try {
-    const card = document.getElementById('captureCard');
-    card.style.position = 'relative';
-    card.style.left = 'auto';
-    const canvas = await html2canvas(card, { backgroundColor: '#0A0A0F', scale: 2 });
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], 'roomfit-result.png', { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Roomfit SPOEX 2026',
-          text: `${myTitle}\nRoomfit에서 ${isMjolnir ? '묠니르' : 'Power Score'} ${myScore}점으로 ${myRank}등! 🏆\n\n@wespion_roomfit #Roomfit #SPOEX2026 #스마트웨이트머신`,
-        });
-        markShared();
-      } else {
-        // Fallback: download
-        downloadImage(canvas);
-        alert('이미지가 저장되었습니다!\n인스타그램 스토리에 직접 올려주세요.');
-      }
-    }, 'image/png');
+    const blob = await getShareBlob();
+    const file = new File([blob], 'roomfit-result.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'Roomfit SPOEX 2026',
+        text: `${myTitle}\nRoomfit에서 ${isMjolnir ? '묠니르' : 'Power Score'} ${myScore}점으로 ${myRank}등! 🏆\n\n@wespion_roomfit #Roomfit #SPOEX2026 #스마트웨이트머신`,
+      });
+      markShared();
+    } else {
+      downloadCanvas();
+      alert('이미지가 저장되었습니다!\n인스타그램 스토리에 직접 올려주세요.');
+    }
   } catch (e) {
     if (e.name !== 'AbortError') {
       console.error(e);
@@ -887,20 +996,15 @@ document.getElementById('shareIgBtn').addEventListener('click', async () => {
   }
 });
 
-// Save image
-document.getElementById('saveImageBtn').addEventListener('click', async () => {
-  const card = document.getElementById('captureCard');
-  card.style.position = 'relative';
-  card.style.left = 'auto';
-  const canvas = await html2canvas(card, { backgroundColor: '#0A0A0F', scale: 2 });
-  downloadImage(canvas);
+document.getElementById('saveImageBtn').addEventListener('click', () => {
+  downloadCanvas();
   alert('이미지가 저장되었습니다!\n인스타그램 스토리에 올려주세요 📸');
 });
 
-function downloadImage(canvas) {
+function downloadCanvas() {
   const link = document.createElement('a');
   link.download = 'roomfit-spoex-result.png';
-  link.href = canvas.toDataURL('image/png');
+  link.href = document.getElementById('shareCanvas').toDataURL('image/png');
   link.click();
 }
 

@@ -672,6 +672,21 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   btn.textContent = '등록 중...';
 
   try {
+    // ── Duplicate check: same ts already registered? ──
+    const qrTs = qs.get('ts');
+    if (qrTs) {
+      const { data: existing } = await sb.from('spoex_results')
+        .select('id, spoex_registrations!spoex_registrations_result_id_fkey(id)')
+        .filter('set_details->>ts', 'eq', qrTs)
+        .limit(1);
+      if (existing && existing.length > 0 && existing[0].spoex_registrations?.length > 0) {
+        resultId = existing[0].id;
+        registrationId = existing[0].spoex_registrations[0].id;
+        await loadRankAndShow();
+        return;
+      }
+    }
+
     // Build payload with lead info in set_details
     const payload = isMjolnir
       ? {
@@ -752,7 +767,17 @@ async function loadRankAndShow() {
     .gte('created_at', start)
     .limit(300);
 
-  const filtered = (rows || [])
+  // Dedup: same ts = same QR → keep latest only
+  const seenTs = new Set();
+  const deduped = (rows || []).filter(r => {
+    const ts = r.set_details?.ts;
+    if (!ts) return true;
+    if (seenTs.has(ts)) return false;
+    seenTs.add(ts);
+    return true;
+  });
+
+  const filtered = deduped
     .filter(r => r.set_details?.source_mode === sourceMode)
     .sort((a, b) => Number(b.set_details?.[scoreField] || 0) - Number(a.set_details?.[scoreField] || 0));
 

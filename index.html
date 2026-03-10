@@ -473,6 +473,21 @@ async function showQrRegistrationView() {
     btn.disabled = true;
     btn.textContent = '등록 중...';
     try {
+      // ── Duplicate check ──
+      const qrTs = qs.get('ts');
+      if (qrTs) {
+        const { data: existing } = await sb.from('spoex_results')
+          .select('id, spoex_registrations!spoex_registrations_result_id_fkey(id)')
+          .filter('set_details->>ts', 'eq', qrTs)
+          .limit(1);
+        if (existing && existing.length > 0 && existing[0].spoex_registrations?.length > 0) {
+          msgEl.style.color = '#BAFC27';
+          msgEl.textContent = '이미 등록된 결과입니다! 리더보드로 이동합니다.';
+          setTimeout(() => location.href = '/', 1200);
+          return;
+        }
+      }
+
       const isMj = mode === 'mjolnir';
       const payload = isMj
         ? {
@@ -655,7 +670,17 @@ async function fetchAll() {
       .gte('created_at', start),
   ]);
 
-  const rows = resultsRes.data || [];
+  const rawRows = resultsRes.data || [];
+
+  // Dedup: same ts = same QR → keep latest only
+  const seenTs = new Set();
+  const rows = rawRows.filter(r => {
+    const ts = r.set_details?.ts;
+    if (!ts) return true;
+    if (seenTs.has(ts)) return false;
+    seenTs.add(ts);
+    return true;
+  });
 
   // mode는 DB 제약상 1rm이라 set_details.source_mode로 분기
   const mjolnirRows = rows

@@ -856,7 +856,7 @@ function renderShareCanvas(img) {
   ctx.font = '700 28px Pretendard, sans-serif';
   ctx.fillText('Roomfit', W/2 + 80, 200);
 
-  // 3) Title badge (BIGGEST element — the fun part)
+  // 3) Title badge (biggest — the fun part)
   const titleColor = isMjolnir ? '#FF855F' : '#BAFC27';
   const titleBg = isMjolnir ? 'rgba(255,107,53,0.25)' : 'rgba(186,252,39,0.2)';
   const titleBorder = isMjolnir ? 'rgba(255,107,53,0.6)' : 'rgba(186,252,39,0.5)';
@@ -867,44 +867,41 @@ function renderShareCanvas(img) {
   ctx.fillStyle = titleColor;
   ctx.fillText(myTitle, W/2, titleY + 72);
 
-  // 4) Score (big but smaller than title)
+  // 4) Nickname (almost same size as title, right below)
+  ctx.font = '700 64px Pretendard, sans-serif';
+  ctx.fillStyle = '#eee';
+  ctx.fillText(myNickname, W/2, 440);
+
+  // 5) Rank (LARGE — the main flex)
+  ctx.font = '900 100px Pretendard, sans-serif';
+  ctx.fillStyle = '#BAFC27';
+  ctx.fillText('🏆 ' + myRank + '등', W/2, 570);
+
+  // 6) Score + label (smaller, supporting info)
   const scoreColor = isMjolnir ? '#FF6B35' : '#5252FA';
-  ctx.font = '900 140px Pretendard, sans-serif';
+  ctx.font = '800 64px Pretendard, sans-serif';
   ctx.fillStyle = scoreColor;
-  ctx.fillText(myScore.toLocaleString(), W/2, 540);
+  ctx.fillText(myScore.toLocaleString() + (isMjolnir ? '점' : ''), W/2, 680);
 
-  // 5) Score label
-  ctx.font = '500 32px Pretendard, sans-serif';
+  ctx.font = '500 28px Pretendard, sans-serif';
   ctx.fillStyle = '#888';
-  ctx.fillText(isMjolnir ? '묠니르 점수' : 'Power Score', W/2, 585);
+  ctx.fillText(isMjolnir ? '묠니르' : 'Power Score', W/2, 720);
 
-  // 6) Stats line
-  ctx.font = '700 30px Pretendard, sans-serif';
-  ctx.fillStyle = '#ddd';
+  // 7) Stats line
+  ctx.font = '600 28px Pretendard, sans-serif';
+  ctx.fillStyle = '#aaa';
   if (isMjolnir) {
     const h = qs.get('height');
     const sh = qs.get('shoulder');
     if (h && sh) {
       const pct = ((parseFloat(h) / parseFloat(sh)) * 100).toFixed(1);
-      ctx.fillText(pct + '%', W/2, 640);
-    } else if (h) {
-      ctx.fillText(h + 'cm', W/2, 640);
+      ctx.fillText(pct + '%', W/2, 760);
     }
   } else {
     const ex = qs.get('exercise') || '';
     const w = qs.get('weight') || '';
-    ctx.fillText(ex + '  ' + w + 'kg', W/2, 640);
+    ctx.fillText(ex + '  ' + w + 'kg', W/2, 760);
   }
-
-  // 7) Rank
-  ctx.font = '800 72px Pretendard, sans-serif';
-  ctx.fillStyle = '#BAFC27';
-  ctx.fillText('🏆 ' + myRank + '등', W/2, 740);
-
-  // 8) Nickname
-  ctx.font = '700 56px Pretendard, sans-serif';
-  ctx.fillStyle = '#eee';
-  ctx.fillText(myNickname, W/2, 810);
 
   // 9) Bottom branding
   ctx.font = '500 28px Pretendard, sans-serif';

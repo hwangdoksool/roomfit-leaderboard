@@ -181,7 +181,7 @@
   }
 
   .row {
-    height: 62px;
+    height: 72px;
     margin-bottom: 4px;
     transition: background .4s, transform .3s;
   }
@@ -203,9 +203,13 @@
   }
 
   .col-rank { width: 60px; text-align: center; font-size: 22px; font-weight: 800; }
-  .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 26px; }
+  .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 28px; }
 
-  .col-name { flex: 1; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; }
+  .col-name { font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .panel.mjolnir .col-title { color: #FF855F; }
+  .panel.power .col-title { color: var(--accent); opacity: .8; }
 
   .col-score {
     width: 140px;
@@ -334,7 +338,7 @@
       <div class="board" id="boardMjolnir">
         <div class="row-header">
           <div class="col-rank">#</div>
-          <div class="col-name">닉네임</div>
+          <div class="col-info"><div class="col-name">닉네임 / 칭호</div></div>
           <div class="col-score">점수</div>
           <div class="col-sub">최대높이</div>
         </div>
@@ -351,8 +355,7 @@
       <div class="board" id="boardPower">
         <div class="row-header">
           <div class="col-rank">#</div>
-          <div class="col-name">닉네임</div>
-          <div class="col-grade"></div>
+          <div class="col-info"><div class="col-name">닉네임 / 칭호</div></div>
           <div class="col-score">점수</div>
           <div class="col-exercise">운동</div>
         </div>
@@ -570,6 +573,36 @@ function grade(score) {
   return '\u{1F422}';
 }
 
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ── Title System (deterministic per id) ──
+const titleCache = {};
+function getTitle(rank, isMj, id) {
+  const key = id || `${rank}-${isMj}`;
+  if (titleCache[key]) return titleCache[key];
+  const t = _genTitle(rank, isMj);
+  titleCache[key] = t;
+  return t;
+}
+
+function _genTitle(rank, isMj) {
+  if (isMj) {
+    if (rank === 1) return '⚡ 토르의 후계자';
+    if (rank === 2) return '🔨 묠니르의 주인';
+    if (rank === 3) return '🛡️ 아스가르드 전사';
+    if (rank <= 5) return pick(['💪 바이킹 챔피언', '⚔️ 발할라 입성자', '🐺 울프 워리어']);
+    if (rank <= 10) return pick(['🔥 미드가르드의 힘', '🪓 버서커', '⛰️ 산을 옮긴 자', '🦅 오딘의 눈']);
+    return pick(['🌊 바다를 가른 자', '🏔️ 서리 거인 사냥꾼', '⚓ 롱십의 선장']);
+  } else {
+    if (rank === 1) return '🔥 EXPLOSIVE KING';
+    if (rank === 2) return '⚡ SPEED DEMON';
+    if (rank === 3) return '💥 POWER MACHINE';
+    if (rank <= 5) return pick(['🚀 VELOCITY MASTER', '🎯 PRECISION FORCE', '💎 DIAMOND LIFTER']);
+    if (rank <= 10) return pick(['💪 IRON WILL', '🦁 BEAST MODE', '⛓️ CHAIN BREAKER', '🌋 VOLCANIC POWER']);
+    return pick(['🏋️ RISING FORCE', '🔋 CHARGING UP', '📈 GAINS INCOMING']);
+  }
+}
+
 // ── Previous IDs for highlight ──
 let prevMjolnirIds = new Set();
 let prevPowerIds = new Set();
@@ -598,11 +631,15 @@ function renderMjolnir(rows) {
     const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
 
+    const title = getTitle(rank, true, r.id);
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
-      <div class="col-name">${esc(nickname)}</div>
+      <div class="col-info">
+        <div class="col-name">${esc(nickname)}</div>
+        <div class="col-title">${esc(title)}</div>
+      </div>
       <div class="col-score">${score}</div>
       <div class="col-sub">${heightCm}</div>
     `;
@@ -634,12 +671,15 @@ function renderPower(rows) {
     const topClass = rank <= 3 ? ` top${rank}` : '';
     const score = Number(d.power_score ?? 0);
 
+    const title = getTitle(rank, false, r.id);
     const div = document.createElement('div');
     div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
-      <div class="col-name">${esc(nickname)}</div>
-      <div class="col-grade">${grade(score)}</div>
+      <div class="col-info">
+        <div class="col-name">${esc(nickname)}</div>
+        <div class="col-title">${esc(title)}</div>
+      </div>
       <div class="col-score">${score}</div>
       <div class="col-exercise">${esc(d.exercise || r.exercise_name || '')}</div>
     `;

@@ -676,12 +676,26 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     const qrTs = qs.get('ts');
     if (qrTs) {
       const { data: existing } = await sb.from('spoex_results')
-        .select('id, spoex_registrations!spoex_registrations_result_id_fkey(id)')
+        .select('id, spoex_registrations!spoex_registrations_result_id_fkey(id, nickname)')
         .filter('set_details->>ts', 'eq', qrTs)
         .limit(1);
       if (existing && existing.length > 0 && existing[0].spoex_registrations?.length > 0) {
+        const prevNick = existing[0].spoex_registrations[0].nickname || '(없음)';
+        const action = confirm(`이미 "${prevNick}" 님으로 등록된 결과입니다.\n\n새 닉네임으로 덮어쓰시겠습니까?`);
+        if (!action) {
+          // 기존 등록 그대로 → 순위 보기
+          resultId = existing[0].id;
+          registrationId = existing[0].spoex_registrations[0].id;
+          await loadRankAndShow();
+          return;
+        }
+        // 덮어쓰기: 기존 registration 닉네임 업데이트
+        const regId = existing[0].spoex_registrations[0].id;
+        await sb.from('spoex_registrations')
+          .update({ nickname: myNickname.slice(0, 10) })
+          .eq('id', regId);
         resultId = existing[0].id;
-        registrationId = existing[0].spoex_registrations[0].id;
+        registrationId = regId;
         await loadRankAndShow();
         return;
       }

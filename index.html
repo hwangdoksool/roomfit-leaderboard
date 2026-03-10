@@ -133,8 +133,23 @@
 
   .row {
     height: 62px; margin-bottom: 4px;
-    transition: background .4s, transform .3s;
+    transition: all .3s;
   }
+  /* Solo tab: bigger everything */
+  .panel.solo .board { padding: 0 24px 12px; }
+  .panel.solo .row { height: 76px; margin-bottom: 6px; padding: 0 24px; }
+  .panel.solo .col-rank { width: 80px; font-size: 36px; }
+  .panel.solo .row.top1 .col-rank,
+  .panel.solo .row.top2 .col-rank,
+  .panel.solo .row.top3 .col-rank { font-size: 42px; }
+  .panel.solo .col-name { font-size: 32px; }
+  .panel.solo .col-title { font-size: 22px; width: 380px; }
+  .panel.solo .col-score { font-size: 44px; width: 200px; }
+  .panel.solo .col-sub { font-size: 20px; width: 160px; }
+  .panel.solo .col-exercise { font-size: 20px; width: 180px; }
+  .panel.solo .panel-title { font-size: 32px; }
+  .panel.solo .panel-icon { font-size: 40px; }
+  .panel.solo .row-header { font-size: 14px; height: 40px; }
   .row:nth-child(odd) { background: var(--bg-row); }
   .row:nth-child(even) { background: var(--bg-row-alt); }
 
@@ -345,15 +360,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function applyTab() {
   const mj = document.getElementById('panelMjolnir');
   const pw = document.getElementById('panelPower');
+  // Reset
+  mj.classList.remove('hidden-panel', 'solo');
+  pw.classList.remove('hidden-panel', 'solo');
+
   if (currentTab === 'both') {
-    mj.classList.remove('hidden-panel');
-    pw.classList.remove('hidden-panel');
+    // both visible, normal size
   } else if (currentTab === 'mjolnir') {
-    mj.classList.remove('hidden-panel');
     pw.classList.add('hidden-panel');
+    mj.classList.add('solo');
   } else {
     mj.classList.add('hidden-panel');
-    pw.classList.remove('hidden-panel');
+    pw.classList.add('solo');
   }
 }
 

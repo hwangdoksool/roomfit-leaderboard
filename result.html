@@ -882,8 +882,14 @@ function renderShareCanvas(img) {
   ctx.font = '700 30px Pretendard, sans-serif';
   ctx.fillStyle = '#ddd';
   if (isMjolnir) {
-    const h = qs.get('height') || '--';
-    ctx.fillText(h + 'cm 최대높이', W/2, 640);
+    const h = qs.get('height');
+    const sh = qs.get('shoulder');
+    if (h && sh) {
+      const pct = ((parseFloat(h) / parseFloat(sh)) * 100).toFixed(1);
+      ctx.fillText('어깨 대비 ' + pct + '%', W/2, 640);
+    } else if (h) {
+      ctx.fillText(h + 'cm', W/2, 640);
+    }
   } else {
     const ex = qs.get('exercise') || '';
     const w = qs.get('weight') || '';

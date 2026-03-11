@@ -386,6 +386,12 @@
       <div class="stats" id="statsGrid"></div>
     </div>
 
+    <!-- 현장 촬영 사진 미리보기 (step1) -->
+    <div id="staffPhotosPreview" style="display:none;margin:0 auto 16px;max-width:400px;padding:0 20px;">
+      <div style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:8px;">📸 현장에서 촬영된 사진</div>
+      <div id="staffPhotoPreviewGrid" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;"></div>
+    </div>
+
     <div class="form-card">
       <div class="form-title">🏆 리더보드 등록 + 이벤트 응모</div>
       <div class="form-desc">등록하고 인스타 공유까지 하면 이벤트 응모 완료!</div>
@@ -578,6 +584,20 @@ async function loadStaffMedia() {
     urls.forEach((url, i) => {
       addThumbButton(grid, url, `📸 ${i + 1}`, () => loadStaffPhoto(url));
     });
+
+    // step1 미리보기에도 사진 표시
+    const previewGrid = document.getElementById('staffPhotoPreviewGrid');
+    const previewContainer = document.getElementById('staffPhotosPreview');
+    if (previewGrid && previewContainer) {
+      previewContainer.style.display = 'block';
+      urls.forEach((url, i) => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = `📸 ${i + 1}`;
+        img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:8px;flex-shrink:0;';
+        previewGrid.appendChild(img);
+      });
+    }
   }
 }
 loadStaffMedia();

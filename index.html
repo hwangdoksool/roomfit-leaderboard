@@ -37,9 +37,12 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Scale wrapper */
+  .container {
+    overflow: hidden;
+  }
+
+  /* Scale: transform + inverse dimension to stay within viewport */
   .scale-root {
-    width: 1920px; height: 1080px;
     transform-origin: top left;
   }
 
@@ -192,17 +195,17 @@
   /* Solo tab: bigger everything */
   .panel.solo .board { padding: 0 24px 12px; }
   .panel.solo .row { height: 70px; margin-bottom: 4px; padding: 0 24px; }
-  .panel.solo .col-rank { width: 80px; font-size: 36px; }
+  .panel.solo .col-rank { width: 80px; font-size: 34px; }
   .panel.solo .row.top1 .col-rank,
   .panel.solo .row.top2 .col-rank,
-  .panel.solo .row.top3 .col-rank { font-size: 42px; }
-  .panel.solo .col-name { font-size: 32px; }
-  .panel.solo .col-title { font-size: 20px; width: 380px; }
-  .panel.solo .col-score { font-size: 44px; width: 200px; }
-  .panel.solo .col-sub { font-size: 20px; width: 160px; }
-  .panel.solo .col-exercise { font-size: 20px; width: 180px; }
-  .panel.solo .panel-title { font-size: 32px; }
-  .panel.solo .panel-icon { font-size: 40px; }
+  .panel.solo .row.top3 .col-rank { font-size: 40px; }
+  .panel.solo .col-name { font-size: 30px; }
+  .panel.solo .col-title { font-size: 19px; width: 360px; }
+  .panel.solo .col-score { font-size: 42px; width: 200px; }
+  .panel.solo .col-sub { font-size: 19px; width: 150px; }
+  .panel.solo .col-exercise { font-size: 19px; width: 180px; }
+  .panel.solo .panel-title { font-size: 30px; }
+  .panel.solo .panel-icon { font-size: 38px; }
   .panel.solo .row-header { font-size: 14px; height: 40px; }
 
   .col-rank { width: 60px; text-align: center; font-size: 22px; font-weight: 800; }
@@ -393,16 +396,28 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const MEDALS = ['', '🥇', '🥈', '🥉'];
 
 // ── Settings / Scale ──
+// Base = 150% of original (solo sizes already big). Slider 50-200% relative to that.
+// We scale the container and inverse-scale its dimensions to fit viewport.
 const scaleSlider = document.getElementById('scaleSlider');
 const scaleVal = document.getElementById('scaleVal');
 const scaleRoot = document.getElementById('scaleRoot');
+const container = scaleRoot.querySelector('.container');
+const BASE_W = 1920, BASE_H = 1080;
+
 const saved = localStorage.getItem('lb_scale');
 if (saved) { scaleSlider.value = saved; }
 function applyScale() {
-  const v = scaleSlider.value;
-  scaleVal.textContent = v + '%';
-  scaleRoot.style.transform = v == 100 ? '' : `scale(${v / 100})`;
-  localStorage.setItem('lb_scale', v);
+  const pct = Number(scaleSlider.value);
+  scaleVal.textContent = pct + '%';
+  // Actual scale factor (100% slider = 1.0)
+  const s = pct / 100;
+  // Scale the root, but shrink the container dimensions inversely so it still fits in viewport
+  scaleRoot.style.transform = `scale(${s})`;
+  scaleRoot.style.width = (BASE_W / s) + 'px';
+  scaleRoot.style.height = (BASE_H / s) + 'px';
+  container.style.width = (BASE_W / s) + 'px';
+  container.style.height = (BASE_H / s) + 'px';
+  localStorage.setItem('lb_scale', pct);
 }
 scaleSlider.addEventListener('input', applyScale);
 applyScale();

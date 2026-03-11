@@ -531,33 +531,91 @@ const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Staff photos from kiosk ──
-const staffPhotoUrls = (qs.get('photos') || '').split(',').filter(u => u.startsWith('http'));
-if (staffPhotoUrls.length > 0) {
+// ── Staff media from kiosk (images + video frames) ──
+const staffMediaUrls = (qs.get('photos') || '').split(',').filter(u => u.startsWith('http'));
+if (staffMediaUrls.length > 0) {
   const grid = document.getElementById('staffPhotoGrid');
   const container = document.getElementById('staffPhotos');
   container.style.display = 'block';
-  staffPhotoUrls.forEach((url, i) => {
-    const img = document.createElement('img');
-    img.src = url;
-    img.alt = `사진 ${i + 1}`;
-    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid transparent;cursor:pointer;flex-shrink:0;';
-    img.addEventListener('click', () => {
-      // Select this photo for overlay
-      grid.querySelectorAll('img').forEach(el => el.style.borderColor = 'transparent');
-      img.style.borderColor = 'var(--accent)';
-      loadStaffPhoto(url);
-    });
-    grid.appendChild(img);
+
+  const imageUrls = staffMediaUrls.filter(u => !/\.(mp4|mov|m4v)(\?|$)/i.test(u));
+  const videoUrls = staffMediaUrls.filter(u => /\.(mp4|mov|m4v)(\?|$)/i.test(u));
+
+  imageUrls.forEach((url, i) => {
+    addThumbButton(grid, url, `사진 ${i + 1}`, () => loadStaffPhoto(url));
   });
+
+  // 영상이면 4프레임을 썸네일로 추출해서 선택 가능하게
+  videoUrls.forEach((url, i) => {
+    extractVideoFrames(url, 4).then(frames => {
+      frames.forEach((frameDataUrl, idx) => {
+        addThumbButton(grid, frameDataUrl, `영상${i + 1} 프레임${idx + 1}`, () => loadStaffPhoto(frameDataUrl));
+      });
+    }).catch(() => {
+      // 실패 시 조용히 무시 (웹뷰/브라우저 CORS 이슈 대비)
+    });
+  });
+}
+
+function addThumbButton(grid, src, alt, onSelect) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt;
+  img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid transparent;cursor:pointer;flex-shrink:0;';
+  img.addEventListener('click', () => {
+    grid.querySelectorAll('img').forEach(el => el.style.borderColor = 'transparent');
+    img.style.borderColor = 'var(--accent)';
+    onSelect();
+  });
+  grid.appendChild(img);
+}
+
+async function extractVideoFrames(videoUrl, count = 4) {
+  const video = document.createElement('video');
+  video.crossOrigin = 'anonymous';
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'metadata';
+  video.src = videoUrl;
+
+  await new Promise((resolve, reject) => {
+    video.onloadedmetadata = resolve;
+    video.onerror = reject;
+  });
+
+  const duration = Math.max(video.duration || 0, 1);
+  const points = Array.from({ length: count }, (_, i) => (duration * (i + 1)) / (count + 1));
+  const frames = [];
+
+  for (const t of points) {
+    await new Promise((resolve, reject) => {
+      video.currentTime = Math.min(t, duration - 0.1);
+      video.onseeked = resolve;
+      video.onerror = reject;
+    });
+    const c = document.createElement('canvas');
+    c.width = 160;
+    c.height = 160;
+    const ctx = c.getContext('2d');
+    // center-crop square
+    const vw = video.videoWidth || 160;
+    const vh = video.videoHeight || 160;
+    const side = Math.min(vw, vh);
+    const sx = (vw - side) / 2;
+    const sy = (vh - side) / 2;
+    ctx.drawImage(video, sx, sy, side, side, 0, 0, 160, 160);
+    frames.push(c.toDataURL('image/jpeg', 0.85));
+  }
+
+  return frames;
 }
 
 function loadStaffPhoto(url) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
-    selectedImage = img;
-    renderShareCanvas();
+    selfieImg = img;
+    renderShareCanvas(img);
   };
   img.src = url;
 }

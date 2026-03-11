@@ -461,6 +461,12 @@
         <span class="share-step-text pending" id="shareText3">응모완료</span>
       </div>
 
+      <!-- Staff photos from kiosk -->
+      <div id="staffPhotos" style="display:none;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--accent);font-weight:700;margin-bottom:8px;">📸 현장에서 촬영된 사진</div>
+        <div id="staffPhotoGrid" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;"></div>
+      </div>
+
       <!-- Selfie input -->
       <input type="file" id="selfieInput" accept="image/*" capture="user" style="display:none">
       <div id="selfieArea" style="margin-bottom:16px;">
@@ -524,6 +530,37 @@ const isMjolnir = mode === 'mjolnir';
 const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Staff photos from kiosk ──
+const staffPhotoUrls = (qs.get('photos') || '').split(',').filter(u => u.startsWith('http'));
+if (staffPhotoUrls.length > 0) {
+  const grid = document.getElementById('staffPhotoGrid');
+  const container = document.getElementById('staffPhotos');
+  container.style.display = 'block';
+  staffPhotoUrls.forEach((url, i) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = `사진 ${i + 1}`;
+    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid transparent;cursor:pointer;flex-shrink:0;';
+    img.addEventListener('click', () => {
+      // Select this photo for overlay
+      grid.querySelectorAll('img').forEach(el => el.style.borderColor = 'transparent');
+      img.style.borderColor = 'var(--accent)';
+      loadStaffPhoto(url);
+    });
+    grid.appendChild(img);
+  });
+}
+
+function loadStaffPhoto(url) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    selectedImage = img;
+    renderShareCanvas();
+  };
+  img.src = url;
+}
 
 // ── State ──
 let registrationId = null;

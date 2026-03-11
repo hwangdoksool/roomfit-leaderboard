@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1920">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1">
 <title>SPOEX 2026 Leaderboard</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css" rel="stylesheet">
@@ -29,8 +29,9 @@
   }
 
   html, body {
-    width: 1920px; height: 1080px;
-    overflow: hidden;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: 'Pretendard', -apple-system, sans-serif;
@@ -47,8 +48,59 @@
   }
 
   .container {
-    width: 1920px; height: 1080px;
+    width: 100%;
+    min-height: 100vh;
     display: flex; flex-direction: column;
+  }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 1024px) {
+    header {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      gap: 8px;
+    }
+    .header-left { order: 1; }
+    .header-center { order: 3; width: 100%; justify-content: center; }
+    .header-right { order: 2; margin-left: auto; }
+    .clock { font-size: 18px; }
+
+    main {
+      flex-direction: column;
+      padding: 12px 16px 0;
+      overflow-y: auto;
+    }
+    .panel {
+      flex: none;
+      min-height: 400px;
+    }
+    .row { height: 52px; }
+    .col-title, .panel .col-title, .panel.solo .col-title { display: none !important; }
+    .col-sub, .panel .col-sub, .panel.solo .col-sub { display: none !important; }
+    .col-exercise, .panel .col-exercise { display: none !important; }
+    .col-rank, .panel .col-rank, .panel.solo .col-rank { width: 36px !important; font-size: 16px !important; }
+    .col-name, .panel .col-name, .panel.solo .col-name { font-size: 15px !important; }
+    .col-score, .panel .col-score, .panel.solo .col-score { font-size: 18px !important; width: 80px !important; }
+    .row, .panel .row, .panel.solo .row { height: 48px !important; padding: 0 8px !important; }
+    .row-header { display: none !important; }
+    .panel-header { padding: 12px 16px 10px !important; }
+    .panel-title { font-size: 18px !important; }
+    .panel-icon { font-size: 24px !important; }
+    .board { padding: 0 8px 8px !important; }
+    main { width: 100vw !important; max-width: 100vw !important; padding: 12px 8px 0 !important; }
+    .panel { max-width: 100% !important; width: 100% !important; }
+    .row { max-width: 100% !important; }
+    .col-name, .panel .col-name, .panel.solo .col-name { flex: 1 1 0 !important; min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+    footer {
+      flex-wrap: wrap;
+      padding: 8px 16px;
+      gap: 8px;
+      height: auto;
+    }
+    footer .stat { font-size: 14px; }
+    footer .stat b { font-size: 22px; }
   }
 
   /* ── HEADER ── */

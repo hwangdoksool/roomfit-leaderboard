@@ -421,6 +421,13 @@
         <div class="rank-name" id="rankName"></div>
       </div>
 
+      <!-- 점수 분포 차트 -->
+      <div style="background:var(--surface);border-radius:16px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-dim);font-weight:600;margin-bottom:12px;">📊 점수 분포</div>
+        <canvas id="distChart" style="width:100%;height:120px;"></canvas>
+        <div id="distLabel" style="font-size:11px;color:var(--text-dim);margin-top:6px;text-align:center;"></div>
+      </div>
+
       <div class="leaderboard-mini" id="leaderboardMini">
         <div class="lb-title" id="lbTitle">🏆 오늘의 리더보드</div>
         <div id="lbRows"></div>
@@ -985,10 +992,11 @@ async function showRank() {
     const nick = r.spoex_registrations?.[0]?.nickname || '???';
     const score = Number(r.set_details?.[scoreField] || 0);
     const isMe = r.id === resultId;
+    const scoreClr = tierColor(rank, filtered.length);
     html += `<div class="lb-row${isMe ? ' me' : ''}">
       <div class="lb-rank">${MEDALS[rank] || rank}</div>
       <div class="lb-name">${esc(nick)}${isMe ? '<span class="lb-me-badge">나</span>' : ''}</div>
-      <div class="lb-score" style="color:${isMjolnir ? 'var(--orange)' : 'var(--accent)'}">${score}</div>
+      <div class="lb-score" style="color:${scoreClr}">${score}</div>
     </div>`;
   });
   if (myRank > 10) {
@@ -1006,8 +1014,119 @@ async function showRank() {
   document.getElementById('regForm').classList.add('hidden');
   document.getElementById('rankReveal').classList.remove('hidden');
 
+  // Distribution chart (must render after elements are visible)
+  requestAnimationFrame(() => {
+    drawDistribution(filtered.map(r => Number(r.set_details?.[scoreField] || 0)), myScore);
+  });
+
   // Update canvas with rank info
   renderShareCanvas(selfieImg);
+}
+
+// ── Tier color by rank ──
+function tierColor(rank, total) {
+  const pct = total > 0 ? rank / total : 1;
+  if (rank <= 3) return isMjolnir ? 'var(--orange)' : 'var(--accent)'; // Top 3: vivid
+  if (pct <= 0.1) return '#FF855F';  // Top 10%: warm orange
+  if (pct <= 0.25) return '#E8A838'; // Top 25%: gold
+  if (pct <= 0.5) return '#8888A0';  // Top 50%: muted
+  return '#555566';                   // Bottom 50%: dim
+}
+
+// ── Distribution chart ──
+function drawDistribution(scores, myScore) {
+  const canvas = document.getElementById('distChart');
+  if (!canvas || scores.length < 2) {
+    if (canvas) canvas.style.display = 'none';
+    return;
+  }
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+
+  const sorted = [...scores].sort((a, b) => a - b);
+  const minS = sorted[0], maxS = sorted[sorted.length - 1];
+  const range = maxS - minS || 1;
+
+  // Build histogram (10 bins)
+  const BINS = 10;
+  const binW = range / BINS;
+  const bins = new Array(BINS).fill(0);
+  sorted.forEach(s => {
+    let idx = Math.floor((s - minS) / binW);
+    if (idx >= BINS) idx = BINS - 1;
+    bins[idx]++;
+  });
+  const maxBin = Math.max(...bins, 1);
+
+  // My bin
+  let myBin = Math.floor((myScore - minS) / binW);
+  if (myBin >= BINS) myBin = BINS - 1;
+  if (myBin < 0) myBin = 0;
+
+  const pad = { left: 8, right: 8, top: 8, bottom: 20 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const barW = chartW / BINS - 4;
+
+  // Draw bars
+  bins.forEach((count, i) => {
+    const barH = (count / maxBin) * chartH;
+    const x = pad.left + i * (chartW / BINS) + 2;
+    const y = pad.top + chartH - barH;
+
+    // Color: gradient from dim to vivid based on score
+    const scorePct = (BINS - 1 - i) / (BINS - 1); // high bin = high score
+    let color;
+    if (i === myBin) {
+      color = isMjolnir ? '#FF6B35' : '#BAFC27'; // My bar highlighted
+    } else if (scorePct > 0.8) {
+      color = 'rgba(255,107,53,0.6)';
+    } else if (scorePct > 0.5) {
+      color = 'rgba(232,168,56,0.4)';
+    } else {
+      color = 'rgba(136,136,160,0.25)';
+    }
+
+    ctx.fillStyle = color;
+    // roundRect fallback for older browsers
+    const r = Math.min(4, barH / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barW - r, y);
+    ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+    ctx.lineTo(x + barW, y + barH);
+    ctx.lineTo(x, y + barH);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+
+    // My marker
+    if (i === myBin) {
+      ctx.fillStyle = isMjolnir ? '#FF6B35' : '#BAFC27';
+      ctx.font = '600 10px Pretendard';
+      ctx.textAlign = 'center';
+      ctx.fillText('▼ 나', x + barW / 2, y - 4);
+    }
+  });
+
+  // X axis labels
+  ctx.fillStyle = '#666';
+  ctx.font = '10px Pretendard';
+  ctx.textAlign = 'center';
+  ctx.fillText(minS.toLocaleString(), pad.left + barW / 2, H - 4);
+  ctx.fillText(maxS.toLocaleString(), pad.left + (BINS - 1) * (chartW / BINS) + barW / 2, H - 4);
+
+  // Percentile label
+  const myPct = sorted.filter(s => s <= myScore).length / sorted.length * 100;
+  document.getElementById('distLabel').textContent =
+    `전체 ${sorted.length}명 중 상위 ${Math.max(1, Math.round(100 - myPct))}%`;
 }
 
 // ═══════════════════════════════════════

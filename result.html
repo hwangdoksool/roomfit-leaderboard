@@ -340,15 +340,7 @@
 
   <!-- ═══ STEP 1: 와우 모먼트 ═══ -->
   <div id="step1">
-    <!-- 점수 카드 -->
-    <div class="result-card" id="resultCard">
-      <div class="mode-badge" id="modeBadge"></div>
-      <div class="score-value" id="scoreValue"></div>
-      <div class="score-label" id="scoreLabel"></div>
-      <div class="stats" id="statsGrid"></div>
-    </div>
-
-    <!-- 공유 이미지 프리뷰 (사진+결과 오버레이) -->
+    <!-- 공유 이미지 프리뷰 (사진+결과 오버레이, 모든 정보 포함) -->
     <div class="canvas-wrap">
       <canvas id="shareCanvas"></canvas>
     </div>
@@ -357,9 +349,9 @@
     <div style="padding:0 4px;">
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">사진 변경</div>
       <div class="photo-selector" id="photoSelector">
-        <!-- 현장컷 썸네일들이 여기 동적 추가됨 -->
         <div class="photo-btn" id="selfieBtn" title="직접 촬영">📷</div>
         <div class="photo-btn" id="galleryBtn" title="갤러리">🖼️</div>
+        <!-- 현장컷 썸네일들이 여기 뒤에 동적 추가됨 -->
       </div>
       <input type="file" id="selfieInput" accept="image/*" capture="user" style="display:none">
       <input type="file" id="galleryInput" accept="image/*" style="display:none">
@@ -453,6 +445,7 @@
         <div class="photo-selector" id="photoSelector2">
           <div class="photo-btn" id="selfieBtn2">📷</div>
           <div class="photo-btn" id="galleryBtn2">🖼️</div>
+          <!-- 현장컷은 뒤에 동적 추가 -->
         </div>
         <input type="file" id="selfieInput2" accept="image/*" capture="user" style="display:none">
         <input type="file" id="galleryInput2" accept="image/*" style="display:none">
@@ -519,6 +512,7 @@ let myScore = 0;
 let myTitle = '';
 let selfieImg = null;
 let staffPhotoUrls = [];
+let previewTitle = isMjolnir ? '⚔️ 묠니르 도전자' : '💪 파워 도전자';
 
 // ── Helpers ──
 function toNum(v) { if (v == null || v === '') return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
@@ -571,48 +565,33 @@ function getTitle(rank, isMj) {
 // STEP 1: 와우 모먼트
 // ═══════════════════════════════════════
 
-// Result card
-const badge = document.getElementById('modeBadge');
-badge.textContent = isMjolnir ? '🔨 묠니르' : '🏋️ AI-VBT';
-badge.className = 'mode-badge ' + (isMjolnir ? 'mode-mjolnir' : 'mode-vbt');
-
-const scoreEl = document.getElementById('scoreValue');
-const labelEl = document.getElementById('scoreLabel');
-const statsGrid = document.getElementById('statsGrid');
-
+// Parse score from URL params
 if (isMjolnir) {
-  const score = qs.get('score') || '0';
-  const height = qs.get('height') || '--';
-  myScore = Number(score) || 0;
-  scoreEl.textContent = myScore.toLocaleString();
-  scoreEl.style.color = 'var(--orange)';
-  labelEl.textContent = '점';
-  let html = `<div class="stat-item"><div class="stat-value">${esc(height)}cm</div><div class="stat-label">최대 높이</div></div>`;
-  const shoulder = qs.get('shoulder');
-  if (shoulder) {
-    const ratio = ((parseFloat(height) / parseFloat(shoulder)) * 100).toFixed(1);
-    html += `<div class="stat-item"><div class="stat-value">${ratio}%</div><div class="stat-label">어깨 대비</div></div>`;
-  }
-  statsGrid.innerHTML = html;
+  myScore = Number(qs.get('score')) || 0;
 } else {
-  const exercise = qs.get('exercise') || '--';
-  const weight = qs.get('weight') || '--';
-  const sets = qs.get('sets') || '--';
-  const reps = qs.get('reps') || '--';
-  const e1rm = qs.get('e1rm');
-  const power = qs.get('power');
-  myScore = Number(power) || 0;
-  scoreEl.textContent = myScore ? myScore.toLocaleString() : '--';
-  scoreEl.style.color = 'var(--primary)';
-  labelEl.textContent = myScore ? 'Power Score' : '';
-  let html = `
-    <div class="stat-item"><div class="stat-value">${esc(exercise)}</div><div class="stat-label">운동</div></div>
-    <div class="stat-item"><div class="stat-value">${esc(weight)}kg</div><div class="stat-label">무게</div></div>
-    <div class="stat-item"><div class="stat-value">${esc(sets)}세트 ${esc(reps)}렙</div><div class="stat-label">볼륨</div></div>
-  `;
-  if (e1rm) html += `<div class="stat-item"><div class="stat-value">${esc(e1rm)}kg</div><div class="stat-label">추정 1RM</div></div>`;
-  statsGrid.innerHTML = html;
+  myScore = Number(qs.get('power')) || 0;
 }
+
+// Preview title — estimate rank from existing data
+async function estimatePreviewTitle() {
+  try {
+    const start = todayStart();
+    const sourceMode = isMjolnir ? 'mjolnir' : 'vbt';
+    const scoreField = isMjolnir ? 'score' : 'power_score';
+    const { data: rows } = await sb.from('spoex_results')
+      .select('set_details')
+      .gte('created_at', start)
+      .limit(300);
+    const scores = (rows || [])
+      .filter(r => r.set_details?.source_mode === sourceMode)
+      .map(r => Number(r.set_details?.[scoreField] || 0))
+      .sort((a, b) => b - a);
+    const estRank = scores.filter(s => s > myScore).length + 1;
+    previewTitle = getTitle(estRank, isMjolnir);
+    renderShareCanvas(selfieImg);
+  } catch (e) { console.warn('preview title failed', e); }
+}
+estimatePreviewTitle();
 
 // Staff photo loading + auto-select random
 async function loadStaffMedia() {
@@ -653,8 +632,8 @@ async function loadStaffMedia() {
         img.classList.add('selected');
         loadPhotoToCanvas(url);
       });
-      // Insert before the camera/gallery buttons
-      sel.insertBefore(img, sel.querySelector('.photo-btn'));
+      // Append after camera/gallery buttons
+      sel.appendChild(img);
     });
   });
 
@@ -752,44 +731,50 @@ function _drawShareCard(ctx, img) {
   ctx.fillStyle = '#666';
   ctx.fillText('SPOEX 2026', CW/2, 200);
 
+  // Mode badge
+  const badgeText = isMjolnir ? '🔨 묠니르 챌린지' : '🏋️ AI-VBT';
+  ctx.font = '600 32px Pretendard, sans-serif';
+  ctx.fillStyle = isMjolnir ? '#FF855F' : '#BAFC27';
+  ctx.fillText(badgeText, CW/2, 300);
+
+  // Title (always show — estimated before registration, actual after)
+  const displayTitle = myTitle || previewTitle;
+  const titleColor = isMjolnir ? '#FF855F' : '#BAFC27';
+  ctx.font = '900 56px Pretendard, sans-serif';
+  ctx.fillStyle = titleColor;
+  ctx.fillText(displayTitle, CW/2, 400);
+
   // Score (hero)
   const scoreColor = isMjolnir ? '#FF6B35' : '#5252FA';
   ctx.font = '900 160px Pretendard, sans-serif';
   ctx.fillStyle = scoreColor;
-  ctx.fillText(myScore.toLocaleString(), CW/2, 520);
+  ctx.fillText(myScore.toLocaleString(), CW/2, 580);
 
-  ctx.font = '600 36px Pretendard, sans-serif';
+  ctx.font = '600 32px Pretendard, sans-serif';
   ctx.fillStyle = '#888';
-  ctx.fillText(isMjolnir ? '묠니르 점수' : 'Power Score', CW/2, 580);
+  ctx.fillText(isMjolnir ? '점' : 'Power Score', CW/2, 630);
 
   // Stats
-  ctx.font = '600 32px Pretendard, sans-serif';
+  ctx.font = '600 28px Pretendard, sans-serif';
   ctx.fillStyle = '#aaa';
   if (isMjolnir) {
     const h = qs.get('height');
-    if (h) ctx.fillText('최대 높이 ' + h + 'cm', CW/2, 640);
+    if (h) ctx.fillText('최대 높이 ' + h + 'cm', CW/2, 690);
   } else {
     const ex = qs.get('exercise') || '';
     const w = qs.get('weight') || '';
-    ctx.fillText(ex + ' · ' + w + 'kg', CW/2, 640);
+    ctx.fillText(ex + ' · ' + w + 'kg', CW/2, 690);
   }
 
-  // Rank + title (if registered)
+  // Rank + nickname (after registration)
   if (myRank) {
-    // Title badge
-    const titleColor = isMjolnir ? '#FF855F' : '#BAFC27';
-    ctx.font = '900 64px Pretendard, sans-serif';
-    ctx.fillStyle = titleColor;
-    ctx.fillText(myTitle, CW/2, 780);
-
-    // Nickname + rank
-    ctx.font = '700 52px Pretendard, sans-serif';
+    ctx.font = '700 48px Pretendard, sans-serif';
     ctx.fillStyle = '#eee';
-    ctx.fillText(myNickname, CW/2, 860);
+    ctx.fillText(myNickname, CW/2, 790);
 
-    ctx.font = '900 80px Pretendard, sans-serif';
+    ctx.font = '900 72px Pretendard, sans-serif';
     ctx.fillStyle = '#BAFC27';
-    ctx.fillText('🏆 ' + myRank + '등', CW/2, 970);
+    ctx.fillText('🏆 ' + myRank + '등', CW/2, 880);
   }
 
   // Bottom branding

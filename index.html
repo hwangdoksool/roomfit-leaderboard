@@ -15,14 +15,17 @@
     --accent: #BAFC27;
     --bg: #0A0A0F;
     --bg-card: #12121A;
-    --bg-row: #1A1A25;
-    --bg-row-alt: #15151F;
     --text: #EEEEF2;
     --text-dim: #8888A0;
     --gold: #FFD700;
     --silver: #C0C0C0;
     --bronze: #CD7F32;
     --orange: #FF6B35;
+
+    /* Tier backgrounds */
+    --tier-top: #1a1520;
+    --tier-elite: #15161e;
+    --tier-chall: #111118;
   }
 
   html, body {
@@ -32,6 +35,12 @@
     color: var(--text);
     font-family: 'Pretendard', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Scale wrapper */
+  .scale-root {
+    width: 1920px; height: 1080px;
+    transform-origin: top left;
   }
 
   .container {
@@ -49,13 +58,20 @@
     flex-shrink: 0;
   }
 
-  .header-left { display: flex; align-items: center; gap: 20px; }
+  .header-left { display: flex; align-items: center; gap: 16px; }
   .logo { height: 36px; filter: brightness(0) invert(1); }
   .event-badge {
     background: var(--primary); color: #fff;
     font-size: 14px; font-weight: 700;
     padding: 5px 14px; border-radius: 6px; letter-spacing: 1px;
   }
+  .btn-settings {
+    background: transparent; border: 1px solid #333; color: var(--text-dim);
+    font-size: 18px; width: 36px; height: 36px; border-radius: 8px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .btn-settings:hover { border-color: var(--accent); color: var(--accent); }
 
   .header-center { display: flex; gap: 4px; }
   .tab-btn {
@@ -87,6 +103,26 @@
     cursor: pointer; font-family: inherit; transition: all .2s;
   }
   .btn-fs:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Settings Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #1a1a25; border: 1px solid #333; border-radius: 16px;
+    padding: 32px; width: 400px;
+  }
+  .modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+  .modal label { display: block; font-size: 14px; color: var(--text-dim); margin-bottom: 6px; }
+  .modal input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .modal .scale-val { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .modal .close-btn {
+    margin-top: 20px; width: 100%; padding: 10px; border: none; border-radius: 8px;
+    background: var(--accent); color: #000; font-weight: 700; font-size: 14px;
+    cursor: pointer; font-family: inherit;
+  }
 
   /* ── MAIN ── */
   main {
@@ -132,9 +168,27 @@
   }
 
   .row {
-    height: 62px; margin-bottom: 4px;
+    height: 62px; margin-bottom: 3px;
     transition: all .3s;
+    border-radius: 10px;
   }
+
+  /* Tier-based backgrounds */
+  .row.tier-top { background: linear-gradient(90deg, #201828 0%, #18141e 100%); }
+  .row.tier-elite { background: linear-gradient(90deg, #181a24 0%, #14151c 100%); }
+  .row.tier-chall { background: #111118; }
+  .row.tier-chall:nth-child(even) { background: #0e0e14; }
+
+  .row.top1 { background: linear-gradient(90deg, rgba(255,215,0,.15) 0%, #201828 60%); border-left: 3px solid var(--gold); }
+  .row.top2 { background: linear-gradient(90deg, rgba(192,192,192,.10) 0%, #201828 60%); border-left: 3px solid var(--silver); }
+  .row.top3 { background: linear-gradient(90deg, rgba(205,127,50,.10) 0%, #201828 60%); border-left: 3px solid var(--bronze); }
+
+  .row.highlight { animation: highlight-pulse 2.5s ease-out; }
+  @keyframes highlight-pulse {
+    0% { background: rgba(186,252,39,.25); transform: scale(1.01); }
+    100% { background: transparent; transform: scale(1); }
+  }
+
   /* Solo tab: bigger everything */
   .panel.solo .board { padding: 0 24px 12px; }
   .panel.solo .row { height: 70px; margin-bottom: 4px; padding: 0 24px; }
@@ -143,25 +197,13 @@
   .panel.solo .row.top2 .col-rank,
   .panel.solo .row.top3 .col-rank { font-size: 42px; }
   .panel.solo .col-name { font-size: 32px; }
-  .panel.solo .col-title { font-size: 22px; width: 380px; }
+  .panel.solo .col-title { font-size: 20px; width: 380px; }
   .panel.solo .col-score { font-size: 44px; width: 200px; }
   .panel.solo .col-sub { font-size: 20px; width: 160px; }
   .panel.solo .col-exercise { font-size: 20px; width: 180px; }
   .panel.solo .panel-title { font-size: 32px; }
   .panel.solo .panel-icon { font-size: 40px; }
   .panel.solo .row-header { font-size: 14px; height: 40px; }
-  .row:nth-child(odd) { background: var(--bg-row); }
-  .row:nth-child(even) { background: var(--bg-row-alt); }
-
-  .row.top1 { background: linear-gradient(90deg, rgba(255,215,0,.12) 0%, transparent 60%); border-left: 3px solid var(--gold); }
-  .row.top2 { background: linear-gradient(90deg, rgba(192,192,192,.08) 0%, transparent 60%); border-left: 3px solid var(--silver); }
-  .row.top3 { background: linear-gradient(90deg, rgba(205,127,50,.08) 0%, transparent 60%); border-left: 3px solid var(--bronze); }
-
-  .row.highlight { animation: highlight-pulse 2.5s ease-out; }
-  @keyframes highlight-pulse {
-    0% { background: rgba(186,252,39,.25); transform: scale(1.01); }
-    100% { background: transparent; transform: scale(1); }
-  }
 
   .col-rank { width: 60px; text-align: center; font-size: 22px; font-weight: 800; }
   .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 28px; }
@@ -176,20 +218,16 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     padding: 0 16px;
   }
-  .panel.mjolnir .col-title { color: var(--orange); }
-  .panel.power .col-title { color: var(--accent); opacity: .85; }
 
   .col-score {
     width: 140px; text-align: right;
     font-size: 28px; font-weight: 800;
     font-variant-numeric: tabular-nums;
   }
-  .panel.mjolnir .col-score { color: var(--orange); }
-  .panel.power .col-score { color: var(--accent); }
 
   .col-sub {
-    width: 120px; text-align: right;
-    font-size: 14px; color: var(--text-dim); padding-left: 8px;
+    width: 100px; text-align: right;
+    font-size: 14px; padding-left: 8px; font-weight: 600;
   }
 
   .col-exercise {
@@ -203,20 +241,11 @@
     flex: 1; color: var(--text-dim); font-size: 18px;
   }
 
-  /* Tier divider */
-  .tier-divider {
-    height: 1px; margin: 6px 16px;
-    background: linear-gradient(90deg, transparent, #333, transparent);
-    flex-shrink: 0;
-  }
-
-  /* Spotlight banner for new entry */
+  /* Spotlight banner */
   .spotlight {
     background: linear-gradient(90deg, rgba(186,252,39,.12), rgba(82,82,250,.08), transparent);
     border: 1px solid rgba(186,252,39,.35);
-    border-radius: 12px;
-    padding: 12px 24px;
-    margin: 0 48px 8px;
+    border-radius: 12px; padding: 12px 24px; margin: 0 48px 8px;
     display: flex; align-items: center; gap: 20px;
     animation: spotlight-glow 2s ease-in-out infinite alternate;
     flex-shrink: 0;
@@ -229,12 +258,7 @@
   .spotlight-new { font-size: 13px; color: var(--accent); font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
   .spotlight-name { font-size: 24px; font-weight: 800; }
   .spotlight-title { font-size: 16px; font-weight: 600; }
-  .panel.mjolnir ~ .spotlight .spotlight-title,
-  .spotlight.mj .spotlight-title { color: var(--orange); }
-  .spotlight.vbt .spotlight-title { color: var(--accent); }
   .spotlight-score { font-size: 28px; font-weight: 900; margin-left: auto; font-variant-numeric: tabular-nums; }
-  .spotlight.mj .spotlight-score { color: var(--orange); }
-  .spotlight.vbt .spotlight-score { color: var(--accent); }
   .spotlight-rank { font-size: 16px; color: var(--text-dim); white-space: nowrap; }
 
   /* ── FOOTER ── */
@@ -268,11 +292,23 @@
 <div class="glow-left"></div>
 <div class="glow-right"></div>
 
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ 디스플레이 설정</h3>
+    <label>UI 스케일: <span class="scale-val" id="scaleVal">100%</span></label>
+    <input type="range" id="scaleSlider" min="50" max="200" value="100" step="5">
+    <button class="close-btn" id="closeSettings">닫기</button>
+  </div>
+</div>
+
+<div class="scale-root" id="scaleRoot">
 <div class="container">
   <header>
     <div class="header-left">
       <img class="logo" src="https://wspn-images.wespion.workers.dev/roomfit-logo.png" alt="Roomfit">
       <div class="event-badge">SPOEX 2026</div>
+      <button class="btn-settings" id="btnSettings" title="Settings">⚙</button>
     </div>
     <div class="header-center">
       <button class="tab-btn active" data-tab="both">🏆 전체</button>
@@ -286,7 +322,7 @@
     </div>
   </header>
 
-  <!-- Spotlight for new entries -->
+  <!-- Spotlight -->
   <div class="spotlight hidden" id="spotlight">
     <div class="spotlight-new">🎉 NEW</div>
     <div class="spotlight-name" id="spotName">-</div>
@@ -296,7 +332,6 @@
   </div>
 
   <main>
-    <!-- Mjolnir -->
     <div class="panel mjolnir" id="panelMjolnir">
       <div class="panel-header">
         <div class="panel-icon">🔨</div>
@@ -308,12 +343,11 @@
           <div class="col-name">닉네임</div>
           <div class="col-title">칭호</div>
           <div class="col-score">점수</div>
-          <div class="col-sub">최대높이</div>
+          <div class="col-sub">어깨비</div>
         </div>
       </div>
     </div>
 
-    <!-- Power Score -->
     <div class="panel power" id="panelPower">
       <div class="panel-header">
         <div class="panel-icon">⚡</div>
@@ -350,15 +384,40 @@
     <div class="power-desc">Power Score = 속도 기반 근파워 측정 (VBT). 무게 × 속도로 폭발력을 수치화합니다.</div>
   </footer>
 </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://ssidizurrvnfmqbvfsqr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzaWRpenVycnZuZm1xYnZmc3FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDg1OTgsImV4cCI6MjA4NzQyNDU5OH0.3UMwz8QPAOoN_hFu-EaheLQunHdpJk_WvMjxuiONRSI';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const MEDALS = ['', '🥇', '🥈', '🥉'];
 
-// ── Title System (unique per ID via hash-seed) ──
+// ── Settings / Scale ──
+const scaleSlider = document.getElementById('scaleSlider');
+const scaleVal = document.getElementById('scaleVal');
+const scaleRoot = document.getElementById('scaleRoot');
+const saved = localStorage.getItem('lb_scale');
+if (saved) { scaleSlider.value = saved; }
+function applyScale() {
+  const v = scaleSlider.value;
+  scaleVal.textContent = v + '%';
+  scaleRoot.style.transform = v == 100 ? '' : `scale(${v / 100})`;
+  localStorage.setItem('lb_scale', v);
+}
+scaleSlider.addEventListener('input', applyScale);
+applyScale();
+
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('show');
+});
+document.getElementById('closeSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.remove('show');
+});
+document.getElementById('settingsModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+});
+
+// ── Title System ──
 function hashCode(s) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
@@ -366,21 +425,52 @@ function hashCode(s) {
 }
 function seededPick(arr, seed) { return arr[seed % arr.length]; }
 
+// Title color palettes (per-tier themed)
+const TITLE_COLORS_MJ = {
+  top: ['#FFD700', '#FF9F1C', '#FF6B35', '#FF4444'],
+  elite: ['#E07CFF', '#B388FF', '#9C7CFF', '#8B5CF6'],
+  chall: ['#6E9AFF', '#5B8DEF', '#4A7FDE', '#3D72CC'],
+};
+const TITLE_COLORS_VBT = {
+  top: ['#BAFC27', '#8EF509', '#6BEC00', '#4DE600'],
+  elite: ['#00E5FF', '#00BCD4', '#0097A7', '#26C6DA'],
+  chall: ['#78909C', '#90A4AE', '#B0BEC5', '#8E99A4'],
+};
+
+function getTitleColor(rank, isMj, seed) {
+  const palette = isMj ? TITLE_COLORS_MJ : TITLE_COLORS_VBT;
+  let tier;
+  if (rank <= 3) tier = palette.top;
+  else if (rank <= 5) tier = palette.elite;
+  else tier = palette.chall;
+  return seededPick(tier, seed);
+}
+
+// Score color: higher = more vivid, lower = dimmer
+function getScoreColor(score, maxScore, isMj) {
+  if (!maxScore || maxScore === 0) return isMj ? 'var(--orange)' : 'var(--accent)';
+  const ratio = Math.min(score / maxScore, 1);
+  const alpha = 0.35 + ratio * 0.65; // 35% → 100% opacity
+  if (isMj) return `rgba(255, 107, 53, ${alpha})`;
+  return `rgba(186, 252, 39, ${alpha})`;
+}
+
 const titleCache = {};
 function getTitle(rank, isMj, id) {
   const key = id || `${rank}-${isMj}`;
   if (titleCache[key]) return titleCache[key];
-  const t = _genTitle(rank, isMj, hashCode(key));
-  titleCache[key] = t;
-  return t;
+  const seed = hashCode(key);
+  const t = _genTitle(rank, isMj, seed);
+  const color = getTitleColor(rank, isMj, seed);
+  titleCache[key] = { text: t, color };
+  return titleCache[key];
 }
 
-// Modifiers to make every title unique
 const MJ_PREFIX = ['전설의', '불멸의', '고대의', '최후의', '진정한', '광기의', '폭풍의', '얼음의', '불꽃의', '영원의', '어둠의', '신성한', '무적의', '강철의'];
 const VBT_PREFIX = ['ULTRA', 'MEGA', 'HYPER', 'SUPREME', 'PRIME', 'ELITE', 'APEX', 'OMEGA', 'TURBO', 'CORE', 'FURY', 'MAX', 'NEO', 'TITAN'];
 
 function _genTitle(rank, isMj, seed) {
-  const s2 = (seed * 2654435761 >>> 0) % 9999; // better spread via Knuth multiplicative hash
+  const s2 = (seed * 2654435761 >>> 0) % 9999;
   if (isMj) {
     const pfx = seededPick(MJ_PREFIX, s2);
     if (rank === 1) return `⚡ ${pfx} 토르의 후계자`;
@@ -406,12 +496,10 @@ function _genTitle(rank, isMj, seed) {
   }
 }
 
-// Tier boundaries for dividers
 function getTier(rank) {
-  if (rank <= 3) return 0;  // 🏆 Top 3
-  if (rank <= 5) return 1;  // ⚔️ Elite
-  if (rank <= 10) return 2; // 🔥 Challenger
-  return 3;
+  if (rank <= 3) return 'top';
+  if (rank <= 5) return 'elite';
+  return 'chall';
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -431,71 +519,57 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function applyTab() {
   const mj = document.getElementById('panelMjolnir');
   const pw = document.getElementById('panelPower');
-  // Reset
   mj.classList.remove('hidden-panel', 'solo');
   pw.classList.remove('hidden-panel', 'solo');
-
-  if (currentTab === 'both') {
-    // both visible, normal size
-  } else if (currentTab === 'mjolnir') {
-    pw.classList.add('hidden-panel');
-    mj.classList.add('solo');
-  } else {
-    mj.classList.add('hidden-panel');
-    pw.classList.add('solo');
-  }
+  if (currentTab === 'mjolnir') { pw.classList.add('hidden-panel'); mj.classList.add('solo'); }
+  else if (currentTab === 'power') { mj.classList.add('hidden-panel'); pw.classList.add('solo'); }
 }
 
-// ── Previous IDs for highlight ──
+// ── Render ──
 let prevMjolnirIds = new Set();
 let prevPowerIds = new Set();
 
-// ── Render ──
 function renderMjolnir(rows) {
   const board = document.getElementById('boardMjolnir');
   const header = board.querySelector('.row-header');
   board.innerHTML = '';
   board.appendChild(header);
 
-  if (!rows.length) {
-    board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
-    return;
-  }
+  if (!rows.length) { board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>'; return; }
   const newIds = new Set(rows.map(r => r.id));
+  const maxScore = Number(rows[0]?.set_details?.score || 1);
 
-  let prevTier = -1;
   rows.forEach((r, i) => {
     const rank = i + 1;
     const tier = getTier(rank);
-
-    // Tier divider
-    if (tier !== prevTier && prevTier >= 0) {
-      const sep = document.createElement('div');
-      sep.className = 'tier-divider';
-      board.appendChild(sep);
-    }
-    prevTier = tier;
-
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
     const d = r.set_details || {};
     const score = d.score ?? '-';
-    const heightCm = d.height_cm != null ? Number(d.height_cm).toFixed(1) + ' cm' : '-';
+    const scoreNum = Number(score) || 0;
+
+    // Height as shoulder percentage
+    const heightCm = d.height_cm ? Number(d.height_cm) : null;
+    const shoulderCm = d.shoulder_cm ? Number(d.shoulder_cm) : null;
+    const pct = (heightCm && shoulderCm) ? ((heightCm / shoulderCm) * 100).toFixed(1) + '%' : (heightCm ? heightCm.toFixed(1) + 'cm' : '-');
+
     const isNew = !prevMjolnirIds.has(r.id) && prevMjolnirIds.size > 0;
     const topClass = rank <= 3 ? ` top${rank}` : '';
     const title = getTitle(rank, true, r.id);
 
-    // Track newest for spotlight
-    if (isNew) showSpotlight(nickname, title, score, rank, true);
+    if (isNew) showSpotlight(nickname, title.text, score, rank, true);
+
+    const scoreColor = getScoreColor(scoreNum, maxScore, true);
+    const pctColor = getScoreColor(scoreNum, maxScore, true); // same fade
 
     const div = document.createElement('div');
-    div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
+    div.className = `row tier-${tier}${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
       <div class="col-name">${esc(nickname)}</div>
-      <div class="col-title">${esc(title)}</div>
-      <div class="col-score">${score}</div>
-      <div class="col-sub">${heightCm}</div>
+      <div class="col-title" style="color:${title.color}">${esc(title.text)}</div>
+      <div class="col-score" style="color:${scoreColor}">${score}</div>
+      <div class="col-sub" style="color:${pctColor}">${pct}</div>
     `;
     board.appendChild(div);
   });
@@ -508,24 +582,13 @@ function renderPower(rows) {
   board.innerHTML = '';
   board.appendChild(header);
 
-  if (!rows.length) {
-    board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>';
-    return;
-  }
+  if (!rows.length) { board.innerHTML += '<div class="row-empty">아직 기록이 없습니다</div>'; return; }
   const newIds = new Set(rows.map(r => r.id));
+  const maxScore = Number(rows[0]?.set_details?.power_score || 1);
 
-  let prevTier = -1;
   rows.forEach((r, i) => {
     const rank = i + 1;
     const tier = getTier(rank);
-
-    if (tier !== prevTier && prevTier >= 0) {
-      const sep = document.createElement('div');
-      sep.className = 'tier-divider';
-      board.appendChild(sep);
-    }
-    prevTier = tier;
-
     const medal = MEDALS[rank] || '';
     const nickname = r.spoex_registrations?.[0]?.nickname || '???';
     const d = r.set_details || {};
@@ -534,15 +597,17 @@ function renderPower(rows) {
     const score = Number(d.power_score ?? 0);
     const title = getTitle(rank, false, r.id);
 
-    if (isNew) showSpotlight(nickname, title, score, rank, false);
+    if (isNew) showSpotlight(nickname, title.text, score, rank, false);
+
+    const scoreColor = getScoreColor(score, maxScore, false);
 
     const div = document.createElement('div');
-    div.className = `row${topClass}${isNew ? ' highlight' : ''}`;
+    div.className = `row tier-${tier}${topClass}${isNew ? ' highlight' : ''}`;
     div.innerHTML = `
       <div class="col-rank">${medal || rank}</div>
       <div class="col-name">${esc(nickname)}</div>
-      <div class="col-title">${esc(title)}</div>
-      <div class="col-score">${score}</div>
+      <div class="col-title" style="color:${title.color}">${esc(title.text)}</div>
+      <div class="col-score" style="color:${scoreColor}">${score}</div>
       <div class="col-exercise">${esc(d.exercise || r.exercise_name || '')}</div>
     `;
     board.appendChild(div);
@@ -552,19 +617,16 @@ function renderPower(rows) {
 
 // ── Spotlight ──
 let spotlightTimer = null;
-function showSpotlight(name, title, score, rank, isMj) {
+function showSpotlight(name, titleText, score, rank, isMj) {
   const el = document.getElementById('spotlight');
   el.classList.remove('hidden', 'mj', 'vbt');
   el.classList.add(isMj ? 'mj' : 'vbt');
   document.getElementById('spotName').textContent = name;
-  document.getElementById('spotTitle').textContent = title;
+  document.getElementById('spotTitle').textContent = titleText;
   document.getElementById('spotScore').textContent = score;
   document.getElementById('spotRank').textContent = `#${rank}`;
   if (spotlightTimer) clearTimeout(spotlightTimer);
-  spotlightTimer = setTimeout(() => {
-    el.classList.add('hidden');
-    spotlightTimer = null;
-  }, 60000); // 1분
+  spotlightTimer = setTimeout(() => { el.classList.add('hidden'); spotlightTimer = null; }, 60000);
 }
 
 // ── Fetch ──
@@ -573,34 +635,24 @@ async function fetchAll() {
   const [resultsRes, countRes] = await Promise.all([
     sb.from('spoex_results')
       .select('id, mode, exercise_name, set_details, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
-      .gte('created_at', start)
-      .limit(300),
+      .gte('created_at', start).limit(300),
     sb.from('spoex_registrations')
-      .select('id', { count: 'exact', head: true })
-      .gte('created_at', start),
+      .select('id', { count: 'exact', head: true }).gte('created_at', start),
   ]);
 
   const rawRows = resultsRes.data || [];
-
-  // Dedup: same ts = same QR → keep latest only
   const seenTs = new Set();
   const rows = rawRows.filter(r => {
     const ts = r.set_details?.ts;
     if (!ts) return true;
     if (seenTs.has(ts)) return false;
-    seenTs.add(ts);
-    return true;
+    seenTs.add(ts); return true;
   });
 
-  const mjolnirRows = rows
-    .filter(r => r.set_details?.source_mode === 'mjolnir')
-    .sort((a, b) => Number(b.set_details?.score || 0) - Number(a.set_details?.score || 0))
-    .slice(0, 10);
-
-  const powerRows = rows
-    .filter(r => r.set_details?.source_mode === 'vbt')
-    .sort((a, b) => Number(b.set_details?.power_score || 0) - Number(a.set_details?.power_score || 0))
-    .slice(0, 10);
+  const mjolnirRows = rows.filter(r => r.set_details?.source_mode === 'mjolnir')
+    .sort((a, b) => Number(b.set_details?.score || 0) - Number(a.set_details?.score || 0)).slice(0, 10);
+  const powerRows = rows.filter(r => r.set_details?.source_mode === 'vbt')
+    .sort((a, b) => Number(b.set_details?.power_score || 0) - Number(a.set_details?.power_score || 0)).slice(0, 10);
 
   renderMjolnir(mjolnirRows);
   renderPower(powerRows);
@@ -615,8 +667,7 @@ function updateClock() {
   const c = document.getElementById('clock');
   if (c) c.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: false });
 }
-setInterval(updateClock, 1000);
-updateClock();
+setInterval(updateClock, 1000); updateClock();
 
 document.getElementById('btnFs')?.addEventListener('click', () => {
   if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
@@ -626,8 +677,7 @@ document.getElementById('btnFs')?.addEventListener('click', () => {
 sb.channel('leaderboard')
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'spoex_registrations' }, () => {
     setTimeout(fetchAll, 500);
-  })
-  .subscribe();
+  }).subscribe();
 
 setInterval(fetchAll, 30000);
 fetchAll();

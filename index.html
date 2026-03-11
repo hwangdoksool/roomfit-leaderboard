@@ -70,17 +70,24 @@
   .container.portrait .col-title { display: none; }
   .container.portrait .col-sub { display: none; }
   .container.portrait .col-exercise { display: none; }
-  .container.portrait .col-rank { width: 50px; font-size: 22px; }
-  .container.portrait .col-name { font-size: 20px; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .container.portrait .col-score { font-size: 28px; width: 120px; }
+  .container.portrait .row,
+  .container.portrait .row-header {
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr) 120px;
+    align-items: center;
+    gap: 8px;
+  }
+  .container.portrait .col-rank { width: auto; font-size: 22px; }
+  .container.portrait .col-name { width: auto; font-size: 20px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .container.portrait .col-score { width: auto; font-size: 28px; text-align: right; justify-self: end; }
   .container.portrait .row { height: 56px; padding: 0 16px; max-width: 100%; overflow: hidden; }
   .container.portrait .row-header { max-width: 100%; overflow: hidden; }
   .container.portrait .board { overflow: hidden; max-width: 100%; }
   .container.portrait .panel.solo .col-title { display: none; }
   .container.portrait .panel.solo .col-sub { display: none; }
-  .container.portrait .panel.solo .col-rank { width: 50px; font-size: 22px; }
-  .container.portrait .panel.solo .col-name { font-size: 20px; }
-  .container.portrait .panel.solo .col-score { font-size: 28px; width: 120px; }
+  .container.portrait .panel.solo .col-rank { width: auto; font-size: 22px; }
+  .container.portrait .panel.solo .col-name { width: auto; font-size: 20px; }
+  .container.portrait .panel.solo .col-score { width: auto; font-size: 28px; }
   .container.portrait .panel.solo .row { height: 56px; padding: 0 16px; }
   .container.portrait header {
     height: 80px;

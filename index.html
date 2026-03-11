@@ -31,7 +31,7 @@
   html, body {
     width: 100%;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
     background: var(--bg);
     color: var(--text);
     font-family: 'Pretendard', -apple-system, sans-serif;
@@ -48,9 +48,47 @@
   }
 
   .container {
-    width: 100%;
-    min-height: 100vh;
+    width: 1920px; height: 1080px;
     display: flex; flex-direction: column;
+    transform-origin: top left;
+  }
+
+  /* Portrait mode: single column layout */
+  .container.portrait {
+    width: 1080px !important;
+    height: 1920px !important;
+  }
+  .container.portrait main {
+    flex-direction: column;
+    padding: 20px 24px 0;
+  }
+  .container.portrait .panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .container.portrait .col-title { display: none; }
+  .container.portrait .col-sub { display: none; }
+  .container.portrait .col-exercise { display: none; }
+  .container.portrait .col-rank { width: 50px; font-size: 22px; }
+  .container.portrait .col-name { font-size: 20px; flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .container.portrait .col-score { font-size: 28px; width: 120px; }
+  .container.portrait .row { height: 56px; padding: 0 16px; max-width: 100%; overflow: hidden; }
+  .container.portrait .row-header { max-width: 100%; overflow: hidden; }
+  .container.portrait .board { overflow: hidden; max-width: 100%; }
+  .container.portrait .panel.solo .col-title { display: none; }
+  .container.portrait .panel.solo .col-sub { display: none; }
+  .container.portrait .panel.solo .col-rank { width: 50px; font-size: 22px; }
+  .container.portrait .panel.solo .col-name { font-size: 20px; }
+  .container.portrait .panel.solo .col-score { font-size: 28px; width: 120px; }
+  .container.portrait .panel.solo .row { height: 56px; padding: 0 16px; }
+  .container.portrait header {
+    height: 80px;
+    padding: 0 24px;
+  }
+  .container.portrait footer {
+    height: 56px;
+    padding: 0 24px;
   }
 
   /* ── Mobile responsive ── */
@@ -188,7 +226,7 @@
   .panel {
     flex: 1; display: flex; flex-direction: column;
     background: var(--bg-card); border-radius: 16px;
-    border: 1px solid #222233; overflow: hidden;
+    border: 1px solid #222233; overflow: visible;
     transition: flex .3s;
   }
   .panel.hidden-panel { display: none; }
@@ -209,6 +247,7 @@
   .board {
     flex: 1; display: flex; flex-direction: column;
     padding: 0 16px 12px; min-height: 0;
+    overflow: hidden;
   }
 
   .row-header, .row {
@@ -264,7 +303,7 @@
   .row.top1 .col-rank, .row.top2 .col-rank, .row.top3 .col-rank { font-size: 28px; }
 
   .col-name {
-    flex: 1; min-width: 100px; font-size: 20px; font-weight: 700;
+    flex: 1 1 0; min-width: 0; font-size: 20px; font-weight: 700;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
@@ -748,6 +787,30 @@ sb.channel('leaderboard')
 
 setInterval(fetchAll, 30000);
 fetchAll();
+
+// ── Auto-scale to fit viewport ──
+function autoScale() {
+  const container = document.querySelector('.container');
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const isPortrait = vh > vw;
+
+  if (isPortrait) {
+    container.classList.add('portrait');
+    container.classList.remove('landscape');
+    const designW = 1080, designH = 1920;
+    const scale = Math.min(vw / designW, vh / designH);
+    container.style.transform = `scale(${scale})`;
+  } else {
+    container.classList.remove('portrait');
+    container.classList.add('landscape');
+    const designW = 1920, designH = 1080;
+    const scale = Math.min(vw / designW, vh / designH);
+    container.style.transform = `scale(${scale})`;
+  }
+}
+autoScale();
+window.addEventListener('resize', autoScale);
 </script>
 </body>
 </html>

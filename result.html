@@ -426,6 +426,7 @@
       </div>
 
       <button class="btn-instagram mb-8" id="goShareBtn">📸 인스타 공유하고 이벤트 응모하기</button>
+      <button class="btn-secondary mb-8" onclick="location.href='/'">📊 전체 리더보드 보기</button>
       <div style="text-align:center;font-size:12px;color:var(--text-dim);">인스타 공유하면 이벤트 응모 완료! 🎉</div>
     </div>
   </div>
@@ -487,7 +488,10 @@
     </div>
   </div>
 
-  <a href="https://roomfit.kr" class="home-link" id="homeLink">🏠 <span>roomfit.kr</span></a>
+  <div style="display:flex;gap:16px;justify-content:center;margin-bottom:12px;">
+    <a href="/" style="color:var(--accent);font-size:14px;text-decoration:none;">📊 리더보드</a>
+    <a href="https://roomfit.kr" style="color:var(--text-dim);font-size:14px;text-decoration:none;">🏠 roomfit.kr</a>
+  </div>
 </div>
 
 <script>
@@ -573,7 +577,15 @@ if (isMjolnir) {
 }
 
 // Preview title — estimate rank from existing data
+// 앱에서 전달한 칭호가 있으면 우선 사용
+const appTitle = qs.get('title');
+
 async function estimatePreviewTitle() {
+  if (appTitle) {
+    previewTitle = appTitle;
+    renderShareCanvas(selfieImg);
+    return;
+  }
   try {
     const start = todayStart();
     const sourceMode = isMjolnir ? 'mjolnir' : 'vbt';
@@ -963,7 +975,7 @@ async function showRank() {
   document.getElementById('rankEmoji').textContent = myRank <= 3 ? rankEmojis[myRank] : '🎉';
   document.getElementById('rankNumber').textContent = myRank;
   document.getElementById('rankName').textContent = myNickname + '님';
-  myTitle = getTitle(myRank, isMjolnir);
+  myTitle = appTitle || getTitle(myRank, isMjolnir);
   const titleEl = document.getElementById('rankTitle');
   titleEl.textContent = myTitle;
   titleEl.className = 'title-badge' + (isMjolnir ? ' mjolnir' : '');

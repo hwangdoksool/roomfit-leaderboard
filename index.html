@@ -376,6 +376,8 @@
   .stat-value.accent { color: var(--accent); }
   .stat-value.primary { color: var(--orange); }
   .stat-divider { width: 1px; height: 32px; background: #333; }
+  .period-btn { background: #222; color: #888; border: 1px solid #333; border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .period-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
   .power-desc { font-size: 13px; color: var(--text-dim); max-width: 400px; }
 
   /* ── BG glow ── */
@@ -468,7 +470,7 @@
 
   <footer>
     <div class="stat">
-      <span class="stat-label">오늘 참가자</span>
+      <span class="stat-label">참가자</span>
       <span class="stat-value accent" id="statCount">-</span>
     </div>
     <div class="stat-divider"></div>
@@ -480,6 +482,15 @@
     <div class="stat">
       <span class="stat-label">Power Score 최고</span>
       <span class="stat-value accent" id="statPowerBest">-</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat" style="gap:6px;">
+      <span class="stat-label">기간</span>
+      <div style="display:flex;gap:4px;">
+        <button class="period-btn active" data-period="all" onclick="setPeriod('all')">전체</button>
+        <button class="period-btn" data-period="today" onclick="setPeriod('today')">오늘</button>
+        <button class="period-btn" data-period="yesterday" onclick="setPeriod('yesterday')">어제</button>
+      </div>
     </div>
     <div class="stat-divider"></div>
     <div class="power-desc">시시각각 바뀌는 내 순위와 칭호가 궁금하다면?! 📸 <b>@wespion_roomfit</b> 팔로우하고 업데이트를 지켜봐주세요!</div>
@@ -616,6 +627,25 @@ function getTier(rank) {
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+// ── Period filter ──
+let currentPeriod = 'all'; // 'all' | 'today' | 'yesterday'
+function getPeriodStart() {
+  if (currentPeriod === 'all') return null;
+  const d = new Date();
+  if (currentPeriod === 'yesterday') d.setDate(d.getDate() - 1);
+  d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function getPeriodEnd() {
+  if (currentPeriod !== 'yesterday') return null;
+  const d = new Date(); d.setHours(0,0,0,0);
+  return d.toISOString();
+}
+function setPeriod(p) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.dataset.period === p));
+  fetchAll();
+}
 function todayStart() { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
 
 // ── Tab switching ──
@@ -744,14 +774,19 @@ function showSpotlight(name, titleText, score, rank, isMj) {
 
 // ── Fetch ──
 async function fetchAll() {
-  const start = todayStart();
-  const [resultsRes, countRes] = await Promise.all([
-    sb.from('spoex_results')
-      .select('id, mode, exercise_name, set_details, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
-      .gte('created_at', start).limit(300),
-    sb.from('spoex_registrations')
-      .select('id', { count: 'exact', head: true }).gte('created_at', start),
-  ]);
+  const start = getPeriodStart();
+  const end = getPeriodEnd();
+
+  let resultsQ = sb.from('spoex_results')
+    .select('id, mode, exercise_name, set_details, created_at, spoex_registrations!spoex_registrations_result_id_fkey!inner(nickname)')
+    .limit(300);
+  let countQ = sb.from('spoex_registrations')
+    .select('id', { count: 'exact', head: true });
+
+  if (start) { resultsQ = resultsQ.gte('created_at', start); countQ = countQ.gte('created_at', start); }
+  if (end) { resultsQ = resultsQ.lt('created_at', end); countQ = countQ.lt('created_at', end); }
+
+  const [resultsRes, countRes] = await Promise.all([resultsQ, countQ]);
 
   const rawRows = resultsRes.data || [];
   const seenTs = new Set();
